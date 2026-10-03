@@ -69,7 +69,7 @@ const allHomeWidgets = [
   HomeWidgetModel(
     id: 'challenge',
     name: 'Daily challenge',
-    description: 'A small stretch goal each day for extra altitude.',
+    description: 'A small stretch goal each day for extra metres.',
     icon: LucideIcons.flag,
     section: 'Goals',
   ),
@@ -103,8 +103,8 @@ const allHomeWidgets = [
   ),
   HomeWidgetModel(
     id: 'altitude',
-    name: 'Altitude',
-    description: 'Your total climb and the distance to the next camp.',
+    name: 'Expedition',
+    description: 'The real mountain you\'re climbing and how far up you are.',
     icon: LucideIcons.mountainSnow,
     section: 'Progress',
   ),

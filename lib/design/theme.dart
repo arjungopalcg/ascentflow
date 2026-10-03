@@ -6,7 +6,7 @@ import 'typography.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ASCENT FLOW — THEME EXTENSION
-// Dual-theme system: Light ("Snowfield") + Dark ("Night climb")
+// Dual-theme system: Light ("Fresh snow") + Dark ("Night sky")
 // Resolve via: Theme.of(context).extension<AppColorsExtension>()!
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -187,7 +187,7 @@ ThemeData _buildTheme(AppColorsExtension c) {
   final brightness = c.isDark ? Brightness.dark : Brightness.light;
   final onPrimary = c.isDark ? AppColors.darkBg : Colors.white;
   final base = ThemeData(brightness: brightness, useMaterial3: true);
-  final textTheme = GoogleFonts.barlowTextTheme(base.textTheme).apply(
+  final textTheme = GoogleFonts.nunitoTextTheme(base.textTheme).apply(
     bodyColor: c.textPrimary,
     displayColor: c.textPrimary,
   );

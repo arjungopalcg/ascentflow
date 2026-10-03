@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:intl/intl.dart';
+
+import '../../game/climb_engine.dart';
 import '../../providers/user_profile_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -26,6 +29,8 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = ref.watch(userProfileProvider.select((p) => p.name));
+    final climb = ref.watch(climbProvider);
+    final n = NumberFormat.decimalPattern();
     final colors = context.colors;
 
     return Scaffold(
@@ -75,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       AppChip(
-                        label: 'Camp 7',
+                        label: 'Camp ${climb.camp}',
                         variant: ChipVariant.summit,
                         icon: LucideIcons.mountain,
                       ),
@@ -94,7 +99,7 @@ class ProfileScreen extends ConsumerWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '2,450 m',
+                  '${n.format(climb.altitude)} m',
                   style: AppTypography.displayXl.copyWith(
                     color: colors.textPrimary,
                     fontSize: 52,
@@ -103,7 +108,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Flexible(
                   child: Text(
-                    '550 m to Camp 8',
+                    '${climb.metresToNextCamp} m to Camp ${climb.camp + 1}',
                     style: AppTypography.label.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -115,7 +120,7 @@ class ProfileScreen extends ConsumerWidget {
             ClipRRect(
               borderRadius: AppRadius.borderRadiusPill,
               child: LinearProgressIndicator(
-                value: 2450 / 3000,
+                value: climb.campProgress,
                 minHeight: 6,
                 backgroundColor: colors.surface2,
                 valueColor: AlwaysStoppedAnimation(colors.summit),

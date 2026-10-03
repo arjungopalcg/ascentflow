@@ -21,7 +21,7 @@ class HelpFaqScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         children: [
-          _buildFaqItem(colors, 'How do I earn XP and level up?', 'You earn XP by completing tasks on your schedule, finishing focus sessions, and maintaining streaks. Check the Analytics screen for a detailed breakdown.'),
+          _buildFaqItem(colors, 'How do I gain altitude?', 'Every task, focus session, journal entry and mood check-in adds metres. Finish the Daily climb (3 tasks, 1 focus session, 1 reflection) to summit the day, and your metres climb real mountains on the Expeditions screen.'),
           const SizedBox(height: AppSpacing.md),
           _buildFaqItem(colors, 'Can I change the timer durations?', 'Yes! Head to the Focus screen. You can choose from presets like 15m or 25m, or use the Custom duration option to set any length up to 120 minutes.'),
           const SizedBox(height: AppSpacing.md),

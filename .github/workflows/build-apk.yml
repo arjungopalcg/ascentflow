@@ -39,8 +39,14 @@ jobs:
           flutter analyze
           flutter test
 
-      # Signed with the debug key (fine for installing on your own phone;
-      # the Play Store needs a real upload key).
+      # Reuse the same debug signing key across builds so a new APK installs
+      # as an update over the last one. (The Play Store needs a real upload key.)
+      - name: Restore signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       - name: Build APK
         run: flutter build apk --release
 

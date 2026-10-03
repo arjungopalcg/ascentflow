@@ -55,25 +55,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
     );
   }
 
-  void _showXpToast() {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 60,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: XpToast(xp: 15),
-        ),
-      ),
-    );
-    overlay.insert(entry);
-    Future.delayed(const Duration(seconds: 2), () {
-      entry.remove();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -147,7 +128,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                           if (direction == DismissDirection.startToEnd) {
                             HapticFeedback.mediumImpact();
                             ref.read(tasksProvider.notifier).toggleTaskCompletion(upcomingTasks[index].id);
-                            _showXpToast();
                             return false;
                           }
                           return true;

@@ -10,6 +10,7 @@ import '../../providers/home_widgets_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../widgets/ascent_mark.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/pip.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING — first launch. Welcome (the one place the brand is front and
@@ -28,6 +29,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pages = PageController();
   final _name = TextEditingController();
   final Set<FocusArea> _areas = {};
+  DayStart? _dayStart;
   List<String> _widgets = [];
   int _step = 0;
 
@@ -49,7 +51,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _go(int step) {
     FocusScope.of(context).unfocus();
-    if (step == 3) _widgets = widgetsForFocusAreas(_areas);
+    if (step == 4) _widgets = widgetsForFocusAreas(_areas);
     setState(() => _step = step);
     final reduce = MediaQuery.of(context).disableAnimations;
     reduce
@@ -63,6 +65,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           name: _name.text,
           areas: _areas,
           homeWidgets: _widgets,
+          dayStart: _dayStart,
         );
   }
 
@@ -95,11 +98,43 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             _Step(
               step: 2,
-              title: 'What would you like help with?',
-              body: 'Pick as many as you like. We\'ll set up your home screen around them.',
+              title: 'When does your day usually start?',
+              body: 'So Pip knows when to bring your morning plan. You can change it later.',
               onBack: () => _go(1),
               primaryLabel: 'Continue',
-              onPrimary: _areas.isEmpty ? null : () => _go(3),
+              onPrimary: () => _go(3),
+              secondaryLabel: 'Skip',
+              onSecondary: () {
+                setState(() => _dayStart = null);
+                _go(3);
+              },
+              child: Column(
+                children: [
+                  for (final d in DayStart.values)
+                    _ChoiceTile(
+                      icon: switch (d) {
+                        DayStart.early => LucideIcons.sunrise,
+                        DayStart.usual => LucideIcons.sun,
+                        DayStart.late => LucideIcons.coffee,
+                      },
+                      title: d.title,
+                      subtitle: d.description,
+                      selected: _dayStart == d,
+                      onTap: () => setState(() {
+                        HapticFeedback.selectionClick();
+                        _dayStart = d;
+                      }),
+                    ),
+                ],
+              ),
+            ),
+            _Step(
+              step: 3,
+              title: 'What would you like help with?',
+              body: 'Pick as many as you like. We\'ll set up your home screen around them.',
+              onBack: () => _go(2),
+              primaryLabel: 'Continue',
+              onPrimary: _areas.isEmpty ? null : () => _go(4),
               child: Column(
                 children: [
                   for (final area in FocusArea.values)
@@ -117,13 +152,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
             _Step(
-              step: 3,
+              step: 4,
               title: _name.text.trim().isEmpty
                   ? 'Here\'s your home screen'
                   : 'Here\'s your home screen, ${_name.text.trim()}',
               body: 'Built from what you picked. Untick anything you don\'t want. '
                   'You can add widgets from any section later.',
-              onBack: () => _go(2),
+              onBack: () => _go(3),
               primaryLabel: 'Start climbing',
               onPrimary: _widgets.isEmpty ? null : _finish,
               child: Column(
@@ -163,7 +198,7 @@ class _Welcome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final panel = colors.isDark ? const Color(0xFF1F4A5E) : AppColors.primaryLight;
+    final panel = colors.isDark ? AppColors.skyNight : AppColors.sky;
     const ink = Color(0xFFF3F7F9);
 
     return Container(
@@ -181,12 +216,27 @@ class _Welcome extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Spacer(flex: 3),
-                  const AscentMark(size: 72, color: ink),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'AscentFlow',
-                    style: AppTypography.displayXl.copyWith(color: ink, fontSize: 56),
+                  const Spacer(flex: 2),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Pip(size: 132, mood: PipMood.wave),
+                      const SizedBox(width: AppSpacing.xs),
+                      Flexible(child: _SpeechBubble(text: 'Hi, I\'m Pip! I\'ll climb with you.')),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      const AscentMark(size: 40, color: ink),
+                      const SizedBox(width: AppSpacing.sm),
+                      Flexible(
+                        child: Text(
+                          'AscentFlow',
+                          style: AppTypography.displayXl.copyWith(color: ink, fontSize: 52),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   ConstrainedBox(
@@ -221,7 +271,33 @@ class _Welcome extends StatelessWidget {
   }
 }
 
-/// Snow-white button for use on the lake-blue brand panel.
+class _SpeechBubble extends StatelessWidget {
+  const _SpeechBubble({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 70),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
+          bottomRight: Radius.circular(18),
+          bottomLeft: Radius.circular(4),
+        ),
+      ),
+      child: Text(
+        text,
+        style: AppTypography.heading3.copyWith(color: AppColors.skyDeep),
+      ),
+    );
+  }
+}
+
+/// Snow-white button for use on the blue brand panel.
 class _InkButton extends StatelessWidget {
   const _InkButton({required this.label, required this.onTap, required this.panel});
   final String label;
@@ -277,7 +353,7 @@ class _Step extends StatelessWidget {
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
 
-  static const _steps = 3;
+  static const _steps = 4;
 
   @override
   Widget build(BuildContext context) {

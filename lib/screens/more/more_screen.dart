@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
 import '../../providers/user_profile_provider.dart';
+import '../expeditions/expeditions_screen.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
 import '../../widgets/common.dart';
@@ -27,6 +28,12 @@ class _MoreScreenState extends State<MoreScreen>
   late final AnimationController _staggerController;
 
   static const _menuItems = [
+    _MenuItem(
+      icon: LucideIcons.mountainSnow,
+      title: 'Expeditions',
+      subtitle: 'Climb real peaks',
+      color: AppColors.sky,
+    ),
     _MenuItem(
       icon: LucideIcons.target,
       title: 'Goals',
@@ -63,6 +70,17 @@ class _MoreScreenState extends State<MoreScreen>
       subtitle: 'Unified view',
       color: AppColors.amber,
     ),
+  ];
+
+  /// Screen for each menu item, in the same order as [_menuItems].
+  static final List<Widget Function()> _pages = [
+    () => const ExpeditionsScreen(),
+    () => const GoalsScreen(),
+    () => const ChatScreen(),
+    () => const PlannerScreen(),
+    () => const ListsScreen(),
+    () => const SavingsScreen(),
+    () => const CalendarScreen(),
   ];
 
   @override
@@ -207,43 +225,10 @@ class _MoreScreenState extends State<MoreScreen>
                   colors: colors,
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    if (index == 0) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const GoalsScreen()),
-                      );
-                    } else if (index == 1) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ChatScreen()),
-                      );
-                    } else if (index == 2) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PlannerScreen(),
-                        ),
-                      );
-                    } else if (index == 3) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ListsScreen()),
-                      );
-                    } else if (index == 4) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SavingsScreen(),
-                        ),
-                      );
-                    } else if (index == 5) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CalendarScreen(),
-                        ),
-                      );
-                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => _pages[index]()),
+                    );
                   },
                 );
               },

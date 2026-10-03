@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
+import '../../game/climb_engine.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
 import '../../widgets/buttons.dart';
 
-class JournalScreen extends StatefulWidget {
+class JournalScreen extends ConsumerStatefulWidget {
   const JournalScreen({super.key});
 
   @override
-  State<JournalScreen> createState() => _JournalScreenState();
+  ConsumerState<JournalScreen> createState() => _JournalScreenState();
 }
 
-class _JournalScreenState extends State<JournalScreen>
+class _JournalScreenState extends ConsumerState<JournalScreen>
     with SingleTickerProviderStateMixin {
   int _selectedMoodIndex = -1;
   final TextEditingController _textController = TextEditingController();
@@ -286,10 +288,14 @@ class _JournalScreenState extends State<JournalScreen>
                         PillButton(
                           label: 'Save entry',
                           onTap: () {
+                            if (_textController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Write a line or two first, then save.')),
+                              );
+                              return;
+                            }
                             HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Saved. Nice work showing up today.')),
-                            );
+                            ref.read(climbProvider.notifier).record(ClimbAction.journal);
                             _textController.clear();
                           },
                           variant: PillButtonVariant.primary,

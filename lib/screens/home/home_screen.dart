@@ -7,13 +7,16 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
+import '../../game/climb_engine.dart';
 import '../../widgets/cards.dart';
-import '../../widgets/climb_panel.dart';
+import '../../widgets/campfire.dart';
+import '../../widgets/trail_map.dart';
 import '../../widgets/common.dart';
 
 import '../../models/goal_model.dart';
 import '../../providers/data_providers.dart';
 import '../../providers/home_widgets_provider.dart';
+import '../expeditions/expeditions_screen.dart';
 import '../profile/profile_screen.dart';
 import '../savings/savings_screen.dart';
 import '../profile/widget_settings_screen.dart';
@@ -151,47 +154,107 @@ class _EmptyHome extends StatelessWidget {
 // HEADER ROW
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _HeaderRow extends StatelessWidget {
+class _HeaderRow extends ConsumerWidget {
   const _HeaderRow({required this.colors});
   final AppColorsExtension colors;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final climb = ref.watch(climbProvider);
+    final streak = ref.read(climbProvider.notifier).displayStreak;
+    final altitude = NumberFormat.decimalPattern().format(climb.altitude);
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Text(
-            DateFormat('EEEE, d MMMM').format(DateTime.now()),
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.label.copyWith(color: colors.textSecondary),
-          ),
+        _StatChip(
+          semantics: '$streak day streak',
+          leading: Campfire(size: 22, lit: streak > 0, intensity: (streak / 30).clamp(0.2, 1).toDouble()),
+          text: '$streak',
+          color: streak > 0 ? AppColors.campfireDeep : colors.textTertiary,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpeditionsScreen())),
         ),
-        // Profile avatar
+        const SizedBox(width: AppSpacing.xs),
+        _StatChip(
+          semantics: '$altitude metres climbed',
+          leading: Icon(LucideIcons.mountainSnow, size: 20, color: AppColors.sky),
+          text: '$altitude m',
+          color: AppColors.skyDeep,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpeditionsScreen())),
+        ),
+        const Spacer(),
         GestureDetector(
           onTap: () {
-          HapticFeedback.selectionClick();
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfileScreen()),
-          );
-        },
+            HapticFeedback.selectionClick();
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          },
           child: Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: colors.surface1,
-              border: Border.all(color: colors.border),
+              border: Border.all(color: colors.border, width: 2),
             ),
-            child: Icon(
-              LucideIcons.user,
-              size: 20,
-              color: colors.textSecondary,
-            ),
+            child: Icon(LucideIcons.user, size: 20, color: colors.textSecondary),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Streak / altitude counter in the top bar.
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.leading,
+    required this.text,
+    required this.color,
+    required this.semantics,
+    required this.onTap,
+  });
+
+  final Widget leading;
+  final String text;
+  final Color color;
+  final String semantics;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Semantics(
+      button: true,
+      label: semantics,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: colors.surface1,
+            borderRadius: AppRadius.borderRadiusPill,
+            border: Border.all(color: colors.border, width: 2),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              leading,
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: AppTypography.heading3.copyWith(
+                  color: colors.isDark ? colors.textPrimary : color,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -214,9 +277,18 @@ class _GreetingBlock extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = ref.watch(userProfileProvider.select((p) => p.name));
-    return Text(
-      name.isEmpty ? _greeting : '$_greeting, $name',
-      style: AppTypography.display.copyWith(color: colors.textPrimary),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          name.isEmpty ? _greeting : '$_greeting, $name',
+          style: AppTypography.display.copyWith(color: colors.textPrimary),
+        ),
+        Text(
+          DateFormat('EEEE, d MMMM').format(DateTime.now()),
+          style: AppTypography.label.copyWith(color: colors.textSecondary),
+        ),
+      ],
     );
   }
 }
@@ -259,7 +331,7 @@ class _DailyChallengeCard extends StatelessWidget {
               ],
             ),
           ),
-          AppChip(label: '+30 XP', variant: ChipVariant.summit),
+          AppChip(label: '+30 m', variant: ChipVariant.summit),
         ],
       ),
     );
@@ -270,25 +342,12 @@ class _DailyChallengeCard extends StatelessWidget {
 // TODAY'S PROGRESS
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _TodayProgressCard extends ConsumerWidget {
+class _TodayProgressCard extends StatelessWidget {
   const _TodayProgressCard({required this.colors});
   final AppColorsExtension colors;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tasks = ref.watch(tasksProvider);
-    final goals = ref.watch(goalsProvider);
-    final tasksDone = tasks.where((t) => t.isCompleted).length;
-    final goalsDone = goals.where((g) => g.progress >= g.target).length;
-    final nextGoal = goals.where((g) => g.progress < g.target).firstOrNull;
-    final nextTask = tasks.where((t) => !t.isCompleted).firstOrNull;
-
-    return ClimbPanel(
-      done: tasksDone + goalsDone,
-      total: tasks.length + goals.length,
-      nextUp: nextGoal?.title ?? nextTask?.title,
-    );
-  }
+  Widget build(BuildContext context) => const TrailMap();
 }
 
 
@@ -780,6 +839,9 @@ class _MoodCheckIn extends ConsumerWidget {
                   child: GestureDetector(
                     onTap: () {
                       HapticFeedback.selectionClick();
+                      if (ref.read(todayMoodProvider) == null) {
+                        ref.read(climbProvider.notifier).record(ClimbAction.mood);
+                      }
                       ref.read(todayMoodProvider.notifier).state = i;
                     },
                     child: AnimatedContainer(
@@ -849,32 +911,37 @@ class _CoachPrompt extends StatelessWidget {
   }
 }
 
-class _AltitudeWidget extends StatelessWidget {
+class _AltitudeWidget extends ConsumerWidget {
   const _AltitudeWidget({required this.colors});
   final AppColorsExtension colors;
 
   @override
-  Widget build(BuildContext context) {
-    // Sample numbers until XP is tracked; matches the Profile screen.
+  Widget build(BuildContext context, WidgetRef ref) {
+    final climb = ref.watch(climbProvider);
+    final exp = climb.expedition;
+    final n = NumberFormat.decimalPattern();
     return _TappableSection(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpeditionsScreen())),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(title: 'Altitude', trailing: 'Camp 7', colors: colors),
+          _SectionHeader(title: 'Expedition', trailing: 'Camp ${climb.camp}', colors: colors),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('2,450 m', style: AppTypography.display.copyWith(color: colors.textPrimary)),
+              Text(exp.peak.name, style: AppTypography.display.copyWith(color: colors.textPrimary)),
               const SizedBox(width: AppSpacing.sm),
               Flexible(
-                child: Text('550 m to Camp 8', style: AppTypography.caption.copyWith(color: colors.textSecondary)),
+                child: Text(
+                  '${n.format(exp.metres)} of ${n.format(exp.peak.metres)} m',
+                  style: AppTypography.caption.copyWith(color: colors.textSecondary),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          _Bar(value: 2450 / 3000, color: colors.summit, colors: colors),
+          _Bar(value: exp.metres / exp.peak.metres, color: AppColors.sky, colors: colors),
         ],
       ),
     );

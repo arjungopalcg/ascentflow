@@ -32,36 +32,32 @@ class PillButton extends StatefulWidget {
 
 enum PillButtonVariant { primary, secondary, destructive }
 
-class _PillButtonState extends State<PillButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
+class _PillButtonState extends State<PillButton> {
+  // Chunky, tactile button: a darker "edge" sits under the face; pressing
+  // pushes the face down onto it, like a physical key.
+  static const _edge = 4.0;
+  bool _pressed = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 80),
-      reverseDuration: const Duration(milliseconds: 200),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  void _setPressed(bool v) {
+    if (_pressed != v) setState(() => _pressed = v);
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  static Color _darken(Color c, double by) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl.withLightness((hsl.lightness - by).clamp(0.0, 1.0)).toColor();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-
     final enabled = widget.onTap != null;
+    final (face, edge, border) = switch (widget.variant) {
+      PillButtonVariant.primary => (colors.primary, _darken(colors.primary, 0.12), null),
+      PillButtonVariant.destructive => (colors.danger, _darken(colors.danger, 0.14), null),
+      PillButtonVariant.secondary => (colors.surface1, colors.border, colors.border),
+    };
+    final radius = AppRadius.borderRadiusMd;
+
     return Semantics(
       button: true,
       enabled: enabled,
@@ -69,78 +65,63 @@ class _PillButtonState extends State<PillButton>
         duration: AppDuration.fast,
         opacity: enabled ? 1 : 0.4,
         child: GestureDetector(
-          onTapDown: enabled ? (_) => _controller.forward() : null,
+          onTapDown: enabled ? (_) => _setPressed(true) : null,
           onTapUp: enabled
               ? (_) {
-                  _controller.reverse();
+                  _setPressed(false);
                   HapticFeedback.lightImpact();
                   widget.onTap!();
                 }
               : null,
-          onTapCancel: enabled ? () => _controller.reverse() : null,
-          child: AnimatedBuilder(
-            animation: _scale,
-            builder: (context, child) =>
-                Transform.scale(scale: _scale.value, child: child),
+          onTapCancel: enabled ? () => _setPressed(false) : null,
+          child: Padding(
+            padding: EdgeInsets.only(top: _pressed ? _edge : 0),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
-              decoration: _buildDecoration(colors),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (widget.icon != null) ...[
-                    Icon(widget.icon, size: 18, color: _textColor(colors)),
-                    const SizedBox(width: AppSpacing.xs),
-                  ],
-                  if (widget.isLoading)
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: _textColor(colors),
-                      ),
-                    )
-                  else
-                    Flexible(
-                      child: Text(
-                        widget.label,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.label.copyWith(
+              decoration: BoxDecoration(color: edge, borderRadius: radius),
+              padding: EdgeInsets.only(bottom: _pressed ? 0 : _edge),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 28),
+                decoration: BoxDecoration(
+                  color: face,
+                  borderRadius: radius,
+                  border: border == null ? null : Border.all(color: border, width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.icon != null) ...[
+                      Icon(widget.icon, size: 19, color: _textColor(colors)),
+                      const SizedBox(width: AppSpacing.xs),
+                    ],
+                    if (widget.isLoading)
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
                           color: _textColor(colors),
-                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: Text(
+                          widget.label,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.heading3.copyWith(
+                            color: _textColor(colors),
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
     );
-  }
-
-  BoxDecoration _buildDecoration(AppColorsExtension colors) {
-    switch (widget.variant) {
-      case PillButtonVariant.primary:
-        return BoxDecoration(
-          color: colors.primary,
-          borderRadius: AppRadius.borderRadiusMd,
-        );
-      case PillButtonVariant.secondary:
-        return BoxDecoration(
-          color: colors.surface1,
-          borderRadius: AppRadius.borderRadiusMd,
-          border: Border.all(color: colors.border, width: 1),
-        );
-      case PillButtonVariant.destructive:
-        return BoxDecoration(
-          color: colors.danger,
-          borderRadius: AppRadius.borderRadiusMd,
-        );
-    }
   }
 
   Color _textColor(AppColorsExtension colors) {

@@ -25,7 +25,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
     {
       'icon': LucideIcons.timer,
       'title': 'Deep Focus Sessions',
-      'body': 'Eliminate distractions with our Pomodoro timer and App Blocker. Earn XP for staying focused.',
+      'body': 'Eliminate distractions with our Pomodoro timer and App Blocker. Every session climbs 40 m.',
     },
     {
       'icon': LucideIcons.lineChart,

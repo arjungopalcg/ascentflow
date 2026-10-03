@@ -1,22 +1,25 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
+import '../../game/climb_engine.dart';
 import '../../widgets/common.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/pip.dart';
 import 'app_blocker_sheet.dart';
 
-class FocusScreen extends StatefulWidget {
+class FocusScreen extends ConsumerStatefulWidget {
   const FocusScreen({super.key});
 
   @override
-  State<FocusScreen> createState() => _FocusScreenState();
+  ConsumerState<FocusScreen> createState() => _FocusScreenState();
 }
 
-class _FocusScreenState extends State<FocusScreen>
+class _FocusScreenState extends ConsumerState<FocusScreen>
     with TickerProviderStateMixin {
   late final AnimationController _timerController;
 
@@ -45,6 +48,7 @@ class _FocusScreenState extends State<FocusScreen>
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             HapticFeedback.heavyImpact();
+            if (_isFocusMode) ref.read(climbProvider.notifier).record(ClimbAction.focus);
             setState(() => _isCompleted = true);
           }
         });
@@ -422,9 +426,17 @@ class _FocusScreenState extends State<FocusScreen>
                     final progress = _timerController.value;
                     return Column(
                       children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                          child: _FocusSky(
+                            progress: progress,
+                            napping: _isRunning && _isFocusMode,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
                         SizedBox(
-                          width: 260,
-                          height: 260,
+                          width: 240,
+                          height: 240,
                           child: CustomPaint(
                             painter: _TimerRingPainter(
                               progress: progress,
@@ -872,8 +884,8 @@ class _CompletedView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             CountUpText(
-              value: 50,
-              suffix: ' XP',
+              value: 40,
+              suffix: ' m climbed',
               style: AppTypography.display.copyWith(
                 color: colors.primary,
                 fontWeight: FontWeight.w800,
@@ -889,3 +901,110 @@ class _CompletedView extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FOCUS SKY — a window onto the mountain. As the session runs the sun arcs
+// across and sets: day → golden hour → alpenglow → night with stars. Pip naps
+// on the ridge while you focus.
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _FocusSky extends StatelessWidget {
+  const _FocusSky({required this.progress, required this.napping});
+
+  final double progress;
+  final bool napping;
+
+  static const _stops = [
+    Color(0xFF7CC6F2), // day
+    Color(0xFFFFC27A), // golden hour
+    Color(0xFFF2709C), // alpenglow
+    Color(0xFF1C4466), // night
+  ];
+
+  static Color _skyAt(double t) {
+    final scaled = t.clamp(0.0, 1.0) * (_stops.length - 1);
+    final i = scaled.floor().clamp(0, _stops.length - 2);
+    return Color.lerp(_stops[i], _stops[i + 1], scaled - i)!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: napping ? 'Focusing. Pip is napping.' : 'Focus sky',
+      child: Container(
+        height: 132,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: _skyAt(progress),
+          borderRadius: AppRadius.borderRadiusLg,
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(child: CustomPaint(painter: _SkyPainter(progress: progress))),
+            Positioned(
+              right: 28,
+              bottom: 6,
+              child: Pip(size: 64, mood: napping ? PipMood.sleep : PipMood.idle),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkyPainter extends CustomPainter {
+  _SkyPainter({required this.progress});
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final p = progress.clamp(0.0, 1.0);
+
+    // Stars fade in for the last third.
+    final stars = ((p - 0.66) / 0.34).clamp(0.0, 1.0);
+    if (stars > 0) {
+      final rnd = math.Random(3);
+      final star = Paint()..color = Colors.white.withValues(alpha: 0.85 * stars);
+      for (var i = 0; i < 26; i++) {
+        canvas.drawCircle(Offset(rnd.nextDouble() * w, rnd.nextDouble() * h * 0.6), 0.8 + rnd.nextDouble() * 1.2, star);
+      }
+    }
+
+    // Sun (then moon) on an arc from left to right.
+    // Starts high on the left, sets behind the ridge on the right.
+    final angle = math.pi * (0.8 - 0.8 * p);
+    final sun = Offset(w * 0.5 + math.cos(angle) * w * 0.42, h * 0.95 - math.sin(angle) * h * 0.72);
+    final isMoon = p > 0.85;
+    canvas.drawCircle(
+      sun,
+      isMoon ? 11 : 16,
+      Paint()..color = isMoon ? const Color(0xFFF4F1E6) : const Color(0xFFFFE08A),
+    );
+
+    // Two mountain ridges.
+    final far = Path()
+      ..moveTo(0, h * 0.72)
+      ..lineTo(w * 0.2, h * 0.5)
+      ..lineTo(w * 0.38, h * 0.66)
+      ..lineTo(w * 0.6, h * 0.42)
+      ..lineTo(w * 0.82, h * 0.64)
+      ..lineTo(w, h * 0.52)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    canvas.drawPath(far, Paint()..color = Colors.black.withValues(alpha: 0.12 + 0.12 * p));
+    final near = Path()
+      ..moveTo(0, h * 0.86)
+      ..quadraticBezierTo(w * 0.3, h * 0.7, w * 0.55, h * 0.82)
+      ..quadraticBezierTo(w * 0.8, h * 0.92, w, h * 0.78)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    canvas.drawPath(near, Paint()..color = Colors.black.withValues(alpha: 0.2 + 0.15 * p));
+  }
+
+  @override
+  bool shouldRepaint(covariant _SkyPainter old) => old.progress != progress;
+}

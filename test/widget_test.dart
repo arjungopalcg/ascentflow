@@ -1,3 +1,4 @@
+import 'package:ascent_flow/game/climb_engine.dart';
 import 'package:ascent_flow/main.dart';
 import 'package:ascent_flow/providers/prefs_provider.dart';
 import 'package:ascent_flow/screens/home/home_screen.dart';
@@ -25,8 +26,13 @@ Future<void> pumpApp(
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
+  // Reduce motion: Pip, the campfire and the trail stop looping, so
+  // pumpAndSettle can settle. (Also how real users with that setting see it.)
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
   SharedPreferences.setMockInitialValues(prefs);
   final sp = await SharedPreferences.getInstance();
@@ -34,7 +40,6 @@ Future<void> pumpApp(
     overrides: [sharedPrefsProvider.overrideWithValue(sp)],
     child: const AscentFlowApp(),
   ));
-  // Let the climb panel's draw-in finish.
   await tester.pump(const Duration(seconds: 2));
 }
 
@@ -46,11 +51,12 @@ final _homeScroll = find
 void main() {
   setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('Today screen greets by name and shows real progress', (tester) async {
+  testWidgets('Today screen greets by name and shows the Daily climb', (tester) async {
     await pumpApp(tester);
 
     expect(find.textContaining('Alex'), findsOneWidget);
-    expect(find.text('2 of 6 done'), findsOneWidget);
+    expect(find.text('0 of 5 steps'), findsOneWidget);
+    expect(find.text('0 m'), findsOneWidget, reason: 'altitude in the top bar');
   });
 
   testWidgets('Every tab in the bottom bar is labelled', (tester) async {
@@ -61,13 +67,36 @@ void main() {
     }
   });
 
-  testWidgets('Ticking a plan item updates today\'s progress', (tester) async {
+  testWidgets('Finishing a task climbs the trail and earns metres', (tester) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Read 20 pages'));
-    await tester.pump(const Duration(seconds: 1));
+    await tester.scrollUntilVisible(find.text('Review Q1 strategy deck'), 300, scrollable: _homeScroll);
+    await tester.tap(find.text('Review Q1 strategy deck'));
+    await tester.pump();
+    expect(find.text('+20 m'), findsOneWidget, reason: 'the floating gain');
+    await tester.pump(const Duration(seconds: 3)); // gain chip and streak banner finish
 
-    expect(find.text('3 of 6 done'), findsOneWidget);
+    expect(find.text('20 m'), findsOneWidget);
+    expect(find.text('1 of 5 steps'), findsOneWidget);
+    expect(find.text('+20 m today'), findsOneWidget);
+  });
+
+  testWidgets('Finishing the Daily climb plays the summit', (tester) async {
+    await pumpApp(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    final climb = container.read(climbProvider.notifier);
+
+    for (final a in [ClimbAction.task, ClimbAction.task, ClimbAction.task, ClimbAction.focus, ClimbAction.mood]) {
+      climb.record(a);
+    }
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(find.text('You summited today!'), findsOneWidget);
+    await tester.tap(find.text('Keep climbing'));
+    await tester.pumpAndSettle();
+    expect(find.text('Summit reached!'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4)); // let banners finish
   });
 
   testWidgets('Tasks tab lists upcoming tasks with readable priorities', (tester) async {
@@ -101,6 +130,11 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
+    expect(find.text('When does your day usually start?'), findsOneWidget);
+    await tester.tap(find.text('Around 8'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
     // Continue stays disabled until something is picked.
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
@@ -119,6 +153,8 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     expect(find.textContaining('Sam'), findsOneWidget);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('profile.dayStart'), 'usual');
     expect(find.text('Focus session'), findsNothing, reason: 'Catalog names are for Edit home');
     expect(find.text('One thing for 25 minutes.'), findsOneWidget);
     await tester.scrollUntilVisible(find.textContaining('saved'), 300, scrollable: _homeScroll);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../game/climb_engine.dart';
 
 import '../models/task_model.dart';
 import '../models/goal_model.dart';
@@ -93,11 +94,12 @@ Future<void> _remote(
 }
 
 class TasksNotifier extends StateNotifier<List<TaskModel>> {
-  TasksNotifier() : super(SupabaseService.isReady ? const [] : _initialTasks) {
+  TasksNotifier(this._ref) : super(SupabaseService.isReady ? const [] : _initialTasks) {
     if (SupabaseService.isReady) load();
   }
 
   static const _table = 'tasks';
+  final Ref _ref;
 
   Future<void> load() async {
     try {
@@ -122,6 +124,8 @@ class TasksNotifier extends StateNotifier<List<TaskModel>> {
           task
     ];
     final task = state.firstWhere((t) => t.id == id);
+    final climb = _ref.read(climbProvider.notifier);
+    task.isCompleted ? climb.record(ClimbAction.task) : climb.undo(ClimbAction.task);
     _remote(
       () => SupabaseService.client
           .from(_table)
@@ -137,15 +141,16 @@ class TasksNotifier extends StateNotifier<List<TaskModel>> {
 }
 
 final tasksProvider = StateNotifierProvider<TasksNotifier, List<TaskModel>>((ref) {
-  return TasksNotifier();
+  return TasksNotifier(ref);
 });
 
 class GoalsNotifier extends StateNotifier<List<GoalModel>> {
-  GoalsNotifier() : super(SupabaseService.isReady ? const [] : _initialGoals) {
+  GoalsNotifier(this._ref) : super(SupabaseService.isReady ? const [] : _initialGoals) {
     if (SupabaseService.isReady) load();
   }
 
   static const _table = 'goals';
+  final Ref _ref;
 
   Future<void> load() async {
     try {
@@ -162,6 +167,13 @@ class GoalsNotifier extends StateNotifier<List<GoalModel>> {
   }
 
   void updateGoalProgress(String id, double newProgress) {
+    final before = state.firstWhere((g) => g.id == id);
+    final wasMet = before.progress >= before.target;
+    final nowMet = newProgress >= before.target;
+    if (nowMet != wasMet) {
+      final climb = _ref.read(climbProvider.notifier);
+      nowMet ? climb.record(ClimbAction.habit) : climb.undo(ClimbAction.habit);
+    }
     state = [
       for (final goal in state)
         if (goal.id == id)
@@ -184,7 +196,7 @@ class GoalsNotifier extends StateNotifier<List<GoalModel>> {
 }
 
 final goalsProvider = StateNotifierProvider<GoalsNotifier, List<GoalModel>>((ref) {
-  return GoalsNotifier();
+  return GoalsNotifier(ref);
 });
 
 class ListsNotifier extends StateNotifier<List<ListData>> {

@@ -38,9 +38,8 @@ class SolidCard extends StatelessWidget {
         borderRadius: AppRadius.borderRadiusMd,
         border: Border.all(
           color: borderColor ?? colors.border,
-          width: 1,
+          width: 2,
         ),
-        boxShadow: colors.cardShadow,
       ),
       child: Row(
         children: [
@@ -117,8 +116,7 @@ class ElevatedCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface1,
         borderRadius: AppRadius.borderRadiusMd,
-        border: Border.all(color: colors.border, width: 1),
-        boxShadow: colors.cardShadow,
+        border: Border.all(color: colors.border, width: 2),
       ),
       child: child,
     );

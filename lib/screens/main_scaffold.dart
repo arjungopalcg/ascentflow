@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../design/theme.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
+import '../widgets/celebration_layer.dart';
 import 'home/home_screen.dart';
 import 'tasks/tasks_screen.dart';
 import 'focus/focus_screen.dart';
@@ -43,9 +44,12 @@ class MainScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navIndexProvider);
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: _screens,
+      // Celebrations play over every tab.
+      body: CelebrationLayer(
+        child: IndexedStack(
+          index: currentIndex,
+          children: _screens,
+        ),
       ),
       bottomNavigationBar: _NavPillBar(
         currentIndex: currentIndex,

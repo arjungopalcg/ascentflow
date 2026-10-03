@@ -23,16 +23,29 @@ enum FocusArea {
   final String description;
 }
 
+/// When someone's day usually starts; used for morning plans and reminders.
+enum DayStart {
+  early('Early bird', 'Up before 7'),
+  usual('Around 8', 'A regular start'),
+  late('Later', 'Mornings start after 9');
+
+  const DayStart(this.title, this.description);
+  final String title;
+  final String description;
+}
+
 class UserProfile {
   const UserProfile({
     this.name = '',
     this.onboarded = false,
     this.focusAreas = const {},
+    this.dayStart,
   });
 
   final String name;
   final bool onboarded;
   final Set<FocusArea> focusAreas;
+  final DayStart? dayStart;
 }
 
 class UserProfileNotifier extends StateNotifier<UserProfile> {
@@ -44,6 +57,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   static const _kName = 'profile.name';
   static const _kOnboarded = 'profile.onboarded';
   static const _kAreas = 'profile.focusAreas';
+  static const _kDayStart = 'profile.dayStart';
 
   static UserProfile _read(SharedPreferences p) => UserProfile(
         name: p.getString(_kName) ?? '',
@@ -52,6 +66,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
           for (final n in p.getStringList(_kAreas) ?? const <String>[])
             ...FocusArea.values.where((a) => a.name == n),
         },
+        dayStart: DayStart.values.where((d) => d.name == p.getString(_kDayStart)).firstOrNull,
       );
 
   /// Finishes first-launch setup and lays out the home screen.
@@ -59,7 +74,9 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     required String name,
     required Set<FocusArea> areas,
     required List<String> homeWidgets,
+    DayStart? dayStart,
   }) async {
+    if (dayStart != null) await _prefs.setString(_kDayStart, dayStart.name);
     await _ref.read(homeWidgetsProvider.notifier).setEnabled(homeWidgets);
     await _prefs.setString(_kName, name.trim());
     await _prefs.setStringList(_kAreas, [for (final a in areas) a.name]);
