@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../providers/user_profile_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
@@ -17,11 +20,12 @@ import 'help_faq_screen.dart';
 import 'app_tour_screen.dart';
 import 'widget_settings_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = ref.watch(userProfileProvider.select((p) => p.name));
     final colors = context.colors;
 
     return Scaffold(
@@ -52,7 +56,11 @@ class ProfileScreen extends StatelessWidget {
                     color: colors.primary.withValues(alpha: 0.15),
                     border: Border.all(color: colors.primary, width: 2),
                   ),
-                  child: Icon(LucideIcons.user, size: 40, color: colors.primary),
+                  child: Icon(
+                    LucideIcons.user,
+                    size: 40,
+                    color: colors.primary,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -60,8 +68,10 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Alex',
-                        style: AppTypography.heading2.copyWith(color: colors.textPrimary),
+                        name.isEmpty ? 'Your profile' : name,
+                        style: AppTypography.heading2.copyWith(
+                          color: colors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       AppChip(
@@ -94,7 +104,9 @@ class ProfileScreen extends StatelessWidget {
                 Flexible(
                   child: Text(
                     '550 m to Camp 8',
-                    style: AppTypography.label.copyWith(color: colors.textSecondary),
+                    style: AppTypography.label.copyWith(
+                      color: colors.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -121,24 +133,44 @@ class ProfileScreen extends StatelessWidget {
               title: 'Settings & Profile',
               items: [
                 _MenuItemData(
-                  icon: LucideIcons.userCog, 
+                  icon: LucideIcons.userCog,
                   label: 'Edit Profile',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EditProfileScreen(),
+                    ),
+                  ),
                 ),
                 _MenuItemData(
-                  icon: LucideIcons.layoutGrid, 
-                  label: 'Widget Settings',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WidgetSettingsScreen())),
+                  icon: LucideIcons.layoutGrid,
+                  label: 'Edit home screen',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WidgetSettingsScreen(),
+                    ),
+                  ),
                 ),
                 _MenuItemData(
-                  icon: LucideIcons.bellRing, 
+                  icon: LucideIcons.bellRing,
                   label: 'Notifications',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
+                  ),
                 ),
                 _MenuItemData(
-                  icon: LucideIcons.palette, 
+                  icon: LucideIcons.palette,
                   label: 'Theme & Appearance',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeAppearanceScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ThemeAppearanceScreen(),
+                    ),
+                  ),
                 ),
               ],
               colors: colors,
@@ -153,19 +185,29 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const AnalyticsScreen(),
+                      ),
                     );
                   },
                 ),
                 _MenuItemData(
                   icon: LucideIcons.mountainSnow,
                   label: 'Summits',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BadgesGalleryScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BadgesGalleryScreen(),
+                    ),
+                  ),
                 ),
                 _MenuItemData(
-                  icon: LucideIcons.users, 
+                  icon: LucideIcons.users,
                   label: 'Friends',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FriendsScreen()),
+                  ),
                 ),
               ],
               colors: colors,
@@ -175,16 +217,26 @@ class ProfileScreen extends StatelessWidget {
               title: 'Support',
               items: [
                 _MenuItemData(
-                  icon: LucideIcons.helpCircle, 
+                  icon: LucideIcons.helpCircle,
                   label: 'Help & FAQs',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpFaqScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpFaqScreen()),
+                  ),
                 ),
                 _MenuItemData(
-                  icon: LucideIcons.compass, 
+                  icon: LucideIcons.compass,
                   label: 'App Tour',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppTourScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AppTourScreen()),
+                  ),
                 ),
-                _MenuItemData(icon: LucideIcons.logOut, label: 'Log Out', isDestructive: true),
+                _MenuItemData(
+                  icon: LucideIcons.logOut,
+                  label: 'Log Out',
+                  isDestructive: true,
+                ),
               ],
               colors: colors,
             ),
@@ -245,19 +297,27 @@ class _MenuSection extends StatelessWidget {
                   ListTile(
                     leading: Icon(
                       item.icon,
-                      color: item.isDestructive ? colors.danger : colors.textSecondary,
+                      color: item.isDestructive
+                          ? colors.danger
+                          : colors.textSecondary,
                       size: 20,
                     ),
                     title: Text(
                       item.label,
                       style: AppTypography.body.copyWith(
-                        color: item.isDestructive ? colors.danger : colors.textPrimary,
+                        color: item.isDestructive
+                            ? colors.danger
+                            : colors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     trailing: item.isDestructive
                         ? null
-                        : Icon(LucideIcons.chevronRight, size: 16, color: colors.textTertiary),
+                        : Icon(
+                            LucideIcons.chevronRight,
+                            size: 16,
+                            color: colors.textTertiary,
+                          ),
                     onTap: () {
                       HapticFeedback.selectionClick();
                       if (item.onTap != null) {
@@ -268,10 +328,14 @@ class _MenuSection extends StatelessWidget {
                     },
                     shape: RoundedRectangleBorder(
                       borderRadius: isLast
-                          ? const BorderRadius.vertical(bottom: Radius.circular(16))
+                          ? const BorderRadius.vertical(
+                              bottom: Radius.circular(16),
+                            )
                           : index == 0
-                              ? const BorderRadius.vertical(top: Radius.circular(16))
-                              : BorderRadius.zero,
+                          ? const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            )
+                          : BorderRadius.zero,
                     ),
                   ),
                   if (!isLast)
@@ -292,7 +356,10 @@ class _MenuSection extends StatelessWidget {
       builder: (context) => AlertDialog(
         backgroundColor: colors.surface1,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.borderRadiusLg),
-        title: Text('Log Out', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text(
+          'Log Out',
+          style: AppTypography.heading3.copyWith(color: colors.textPrimary),
+        ),
         content: Text(
           'Are you sure you want to log out of Ascent Flow?',
           style: AppTypography.body.copyWith(color: colors.textSecondary),
@@ -300,7 +367,10 @@ class _MenuSection extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppTypography.label.copyWith(color: colors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: AppTypography.label.copyWith(color: colors.textSecondary),
+            ),
           ),
           PillButton(
             label: 'Log Out',

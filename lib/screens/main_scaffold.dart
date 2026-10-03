@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../design/theme.dart';
@@ -15,19 +16,22 @@ import 'more/more_screen.dart';
 // MAIN SCAFFOLD — IndexedStack + NavPillBar
 // ─────────────────────────────────────────────────────────────────────────────
 
-class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+/// The selected bottom tab. Home widgets set it to jump to a section.
+final navIndexProvider = StateProvider<int>((ref) => 0);
 
-  @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+/// Tab indexes, so callers don't hard-code numbers.
+abstract final class AppTab {
+  static const today = 0;
+  static const tasks = 1;
+  static const focus = 2;
+  static const journal = 3;
+  static const more = 4;
 }
 
-class _MainScaffoldState extends State<MainScaffold>
-    with TickerProviderStateMixin {
-  int _currentIndex = 0;
-  late final AnimationController _fadeController;
+class MainScaffold extends ConsumerWidget {
+  const MainScaffold({super.key});
 
-  final List<Widget> _screens = const [
+  static const List<Widget> _screens = [
     HomeScreen(),
     TasksScreen(),
     FocusScreen(),
@@ -36,36 +40,20 @@ class _MainScaffoldState extends State<MainScaffold>
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 180),
-    );
-  }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
-  }
-
-  void _onTabTap(int index) {
-    if (index == _currentIndex) return;
-    HapticFeedback.selectionClick();
-    setState(() => _currentIndex = index);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(navIndexProvider);
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: _NavPillBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTap,
+        currentIndex: currentIndex,
+        onTap: (index) {
+          if (index == currentIndex) return;
+          HapticFeedback.selectionClick();
+          ref.read(navIndexProvider.notifier).state = index;
+        },
       ),
     );
   }

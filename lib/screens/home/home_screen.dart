@@ -15,6 +15,13 @@ import '../../models/goal_model.dart';
 import '../../providers/data_providers.dart';
 import '../../providers/home_widgets_provider.dart';
 import '../profile/profile_screen.dart';
+import '../savings/savings_screen.dart';
+import '../profile/widget_settings_screen.dart';
+import '../main_scaffold.dart';
+import '../goals/goals_screen.dart';
+import '../chat/chat_screen.dart';
+import '../../widgets/buttons.dart';
+import '../../providers/user_profile_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -23,192 +30,119 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _staggerController;
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  Widget _buildWidget(String id, AppColorsExtension colors) {
+    return switch (id) {
+      'progress' => _TodayProgressCard(colors: colors),
+      'plan' => _TodayPlanCard(colors: colors),
+      'focus' => _FocusQuickStart(colors: colors),
+      'reminders' => _TaskReminderWidget(colors: colors),
+      'goals' => _GoalProgressWidget(colors: colors),
+      'challenge' => _DailyChallengeCard(colors: colors),
+      'mood' => _MoodCheckIn(colors: colors),
+      'savings' => _SavingsSummaryCard(colors: colors),
+      'lists' => _MyListsWidget(colors: colors),
+      'coach' => _CoachPrompt(colors: colors),
+      'altitude' => _AltitudeWidget(colors: colors),
+      'motivation' => _MotivationCard(colors: colors),
+      _ => const SizedBox.shrink(),
+    };
+  }
 
-  // Removed local _widgetOrder, using homeWidgetsProvider instead.
-
-  @override
-  void initState() {
-    super.initState();
-    _staggerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-      // Sections appear immediately; the climb panel owns the one entrance
-      // animation on this screen.
-      value: 1,
+  void _editHome() {
+    HapticFeedback.selectionClick();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const WidgetSettingsScreen()),
     );
-  }
-
-  @override
-  void dispose() {
-    _staggerController.dispose();
-    super.dispose();
-  }
-
-  Animation<double> _staggeredFade(int index) {
-    final start = (index * 0.08).clamp(0.0, 0.7);
-    final end = (start + 0.3).clamp(0.0, 1.0);
-    return Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _staggerController,
-        curve: Interval(start, end, curve: AppCurves.easeOut),
-      ),
-    );
-  }
-
-  Animation<Offset> _staggeredSlide(int index) {
-    final start = (index * 0.08).clamp(0.0, 0.7);
-    final end = (start + 0.3).clamp(0.0, 1.0);
-    return Tween<Offset>(
-      begin: const Offset(0, 16),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _staggerController,
-        curve: Interval(start, end, curve: AppCurves.easeOut),
-      ),
-    );
-  }
-
-  Widget _buildDraggableWidget(String id, AppColorsExtension colors) {
-    switch (id) {
-      case 'challenge':
-        return _DailyChallengeCard(colors: colors);
-      case 'progress':
-        return _TodayProgressCard(colors: colors);
-      case 'plan':
-        return _TodayPlanCard(colors: colors);
-      case 'savings':
-        return _SavingsSummaryCard(colors: colors);
-      case 'lists':
-        return _MyListsWidget(colors: colors);
-      case 'reminders':
-        return _TaskReminderWidget(colors: colors);
-      case 'motivation':
-        return _MotivationCard(colors: colors);
-      default:
-        return const SizedBox.shrink();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final widgetState = ref.watch(homeWidgetsProvider);
-    final enabledOrder = widgetState.order.where((id) => widgetState.enabledIds.contains(id)).toList();
+    final visible = ref.watch(homeWidgetsProvider).visible;
 
-    return Stack(
-      children: [
-        // ── Main Content ───────────────────────────────────────────
-        SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: AppSpacing.xxl),
-                // ── Header Row ─────────────────────────────────────
-                _StaggeredWidget(
-                  index: 0,
-                  controller: _staggerController,
-                  fade: _staggeredFade(0),
-                  slide: _staggeredSlide(0),
-                  child: _HeaderRow(colors: colors),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: AppSpacing.xxl),
+            _HeaderRow(colors: colors),
+            const SizedBox(height: AppSpacing.xxs),
+            _GreetingBlock(colors: colors),
+            const SizedBox(height: AppSpacing.xl),
 
-                // ── Greeting ───────────────────────────────────────
-                _StaggeredWidget(
-                  index: 1,
-                  controller: _staggerController,
-                  fade: _staggeredFade(1),
-                  slide: _staggeredSlide(1),
-                  child: _GreetingBlock(colors: colors),
+            if (visible.isEmpty)
+              _EmptyHome(colors: colors, onAdd: _editHome)
+            else
+              // Long-press a widget to drag it somewhere else.
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                proxyDecorator: (child, index, animation) => Material(
+                  color: Colors.transparent,
+                  child: Transform.scale(scale: 1.02, child: child),
                 ),
-                const SizedBox(height: AppSpacing.xl),
+                itemCount: visible.length,
+                itemBuilder: (context, index) {
+                  final id = visible[index];
+                  return ReorderableDelayedDragStartListener(
+                    key: ValueKey(id),
+                    index: index,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _buildWidget(id, colors),
+                    ),
+                  );
+                },
+                onReorderItem: (oldIndex, newIndex) => ref
+                    .read(homeWidgetsProvider.notifier)
+                    .reorderVisible(oldIndex, newIndex),
+              ),
 
-                // ── Draggable Widgets ──────────────────────────────
-                ReorderableListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  proxyDecorator: (child, index, animation) {
-                    return Material(
-                      color: Colors.transparent,
-                      elevation: 0,
-                      child: Transform.scale(
-                        scale: 1.02,
-                        child: child,
-                      ),
-                    );
-                  },
-                  itemCount: enabledOrder.length,
-                  itemBuilder: (context, index) {
-                    final id = enabledOrder[index];
-                    return ReorderableDelayedDragStartListener(
-                      key: ValueKey(id),
-                      index: index,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _StaggeredWidget(
-                          index: index + 2,
-                          controller: _staggerController,
-                          fade: _staggeredFade(index + 2),
-                          slide: _staggeredSlide(index + 2),
-                          child: _buildDraggableWidget(id, colors),
-                        ),
-                      ),
-                    );
-                  },
-                  onReorderItem: (oldIndex, newIndex) {
-                    ref.read(homeWidgetsProvider.notifier).reorderWidgets(oldIndex, newIndex);
-                  },
+            if (visible.isNotEmpty)
+              Center(
+                child: TextButton.icon(
+                  onPressed: _editHome,
+                  icon: Icon(LucideIcons.slidersHorizontal, size: 18, color: colors.textSecondary),
+                  label: Text(
+                    'Edit home',
+                    style: AppTypography.label.copyWith(color: colors.textSecondary),
+                  ),
                 ),
-                const SizedBox(height: 120),
-              ],
-            ),
-          ),
+              ),
+            const SizedBox(height: AppSpacing.xxl),
+          ],
         ),
-
-      ],
+      ),
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STAGGERED ANIMATION WRAPPER
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _StaggeredWidget extends StatelessWidget {
-  const _StaggeredWidget({
-    required this.index,
-    required this.controller,
-    required this.fade,
-    required this.slide,
-    required this.child,
-  });
-
-  final int index;
-  final AnimationController controller;
-  final Animation<double> fade;
-  final Animation<Offset> slide;
-  final Widget child;
+class _EmptyHome extends StatelessWidget {
+  const _EmptyHome({required this.colors, required this.onAdd});
+  final AppColorsExtension colors;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        return Opacity(
-          opacity: fade.value,
-          child: Transform.translate(
-            offset: slide.value,
-            child: child,
+    return PlainSection(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const EyebrowLabel('Your home is empty'),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Add widgets from any part of the app: tasks, focus, journal, goals, savings and more.',
+            style: AppTypography.body.copyWith(color: colors.textSecondary),
           ),
-        );
-      },
+          const SizedBox(height: AppSpacing.md),
+          PillButton(label: 'Add widgets', icon: LucideIcons.plus, onTap: onAdd),
+        ],
+      ),
     );
   }
 }
@@ -266,7 +200,7 @@ class _HeaderRow extends StatelessWidget {
 // GREETING BLOCK
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _GreetingBlock extends StatelessWidget {
+class _GreetingBlock extends ConsumerWidget {
   const _GreetingBlock({required this.colors});
   final AppColorsExtension colors;
 
@@ -278,9 +212,10 @@ class _GreetingBlock extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = ref.watch(userProfileProvider.select((p) => p.name));
     return Text(
-      '$_greeting, Alex',
+      name.isEmpty ? _greeting : '$_greeting, $name',
       style: AppTypography.display.copyWith(color: colors.textPrimary),
     );
   }
@@ -644,51 +579,302 @@ class _SavingsSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goals = ref.watch(goalsProvider);
-    final savingsGoals = goals.where((g) => g.targetType == GoalTargetType.numeric).take(2).toList();
+    final goals = ref.watch(savingsProvider);
+    final saved = goals.fold<double>(0, (s, g) => s + g.current);
+    final money = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
 
+    return _TappableSection(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavingsScreen())),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(title: 'Savings', trailing: '${money.format(saved)} saved', colors: colors),
+          const SizedBox(height: AppSpacing.sm),
+          if (goals.isEmpty)
+            Text('No savings goals yet. Tap to add one.', style: AppTypography.body.copyWith(color: colors.textSecondary))
+          else
+            for (final g in goals.take(3)) ...[
+              Row(
+                children: [
+                  Expanded(child: Text(g.title, style: AppTypography.label.copyWith(color: colors.textPrimary))),
+                  Text(
+                    '${money.format(g.current)} of ${money.format(g.target)}',
+                    style: AppTypography.caption.copyWith(color: colors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              _Bar(value: g.target == 0 ? 0 : g.current / g.target, color: g.color, colors: colors),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW SECTION WIDGETS — one per part of the app, so Home can be built from
+// whatever the person cares about.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Heading row used by plain Home sections.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.colors, this.trailing});
+  final String title;
+  final String? trailing;
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Expanded(child: EyebrowLabel(title)),
+        if (trailing != null)
+          Text(trailing!, style: AppTypography.caption.copyWith(color: colors.textTertiary)),
+      ],
+    );
+  }
+}
+
+/// A plain section that opens its source screen when tapped.
+class _TappableSection extends StatelessWidget {
+  const _TappableSection({required this.child, required this.onTap});
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: PlainSection(child: child),
+    );
+  }
+}
+
+class _Bar extends StatelessWidget {
+  const _Bar({required this.value, required this.color, required this.colors});
+  final double value;
+  final Color color;
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: AppRadius.borderRadiusPill,
+      child: LinearProgressIndicator(
+        value: value.clamp(0, 1).toDouble(),
+        minHeight: 6,
+        backgroundColor: colors.surface2,
+        valueColor: AlwaysStoppedAnimation(color),
+      ),
+    );
+  }
+}
+
+class _FocusQuickStart extends ConsumerWidget {
+  const _FocusQuickStart({required this.colors});
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PlainSection(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const EyebrowLabel('Focus'),
+                Text(
+                  'One thing for 25 minutes.',
+                  style: AppTypography.body.copyWith(color: colors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          PillButton(
+            label: 'Start',
+            icon: LucideIcons.play,
+            onTap: () => ref.read(navIndexProvider.notifier).state = AppTab.focus,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoalProgressWidget extends ConsumerWidget {
+  const _GoalProgressWidget({required this.colors});
+  final AppColorsExtension colors;
+
+  static String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(goalsProvider).where((g) => g.progress < g.target).take(3).toList();
+    return _TappableSection(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsScreen())),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(title: 'Goals', trailing: '${active.length} active', colors: colors),
+          const SizedBox(height: AppSpacing.sm),
+          if (active.isEmpty)
+            Text('Every goal is met. Tap to set a new one.', style: AppTypography.body.copyWith(color: colors.textSecondary))
+          else
+            for (final g in active) ...[
+              Row(
+                children: [
+                  Expanded(child: Text(g.title, style: AppTypography.label.copyWith(color: colors.textPrimary))),
+                  Text(
+                    '${_fmt(g.progress)} / ${_fmt(g.target)}${g.unit.isEmpty ? '' : ' ${g.unit}'}',
+                    style: AppTypography.caption.copyWith(color: colors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              _Bar(value: g.target == 0 ? 0 : g.progress / g.target, color: g.progressColor, colors: colors),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Today's mood, shared between the Home check-in and anything else that reads it.
+final todayMoodProvider = StateProvider<int?>((ref) => null);
+
+class _MoodCheckIn extends ConsumerWidget {
+  const _MoodCheckIn({required this.colors});
+  final AppColorsExtension colors;
+
+  static const _moods = [('😢', 'Rough'), ('😕', 'Low'), ('😐', 'Okay'), ('🙂', 'Good'), ('😊', 'Great')];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mood = ref.watch(todayMoodProvider);
     return PlainSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          EyebrowLabel(mood == null ? 'How are you feeling?' : 'Feeling ${_moods[mood].$2.toLowerCase()} today'),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const EyebrowLabel('SAVINGS PROGRESS'),
-              Icon(LucideIcons.piggyBank, size: 16, color: colors.textTertiary),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (savingsGoals.isEmpty)
-            Text('No active savings goals.', style: AppTypography.body.copyWith(color: colors.textSecondary))
-          else
-            ...savingsGoals.map((goal) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(goal.title, style: AppTypography.label.copyWith(color: colors.textPrimary)),
-                      Text('${((goal.progress / goal.target) * 100).toInt()}%', 
-                        style: AppTypography.caption.copyWith(color: colors.primary, fontWeight: FontWeight.bold)
+              for (var i = 0; i < _moods.length; i++)
+                Semantics(
+                  button: true,
+                  selected: mood == i,
+                  label: _moods[i].$2,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      ref.read(todayMoodProvider.notifier).state = i;
+                    },
+                    child: AnimatedContainer(
+                      duration: AppDuration.fast,
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: mood == i ? colors.primary.withValues(alpha: colors.isDark ? 0.22 : 0.12) : colors.surface1,
+                        border: Border.all(color: mood == i ? colors.primary : colors.border, width: mood == i ? 1.5 : 1),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: AppRadius.borderRadiusPill,
-                    child: LinearProgressIndicator(
-                      value: (goal.progress / goal.target).clamp(0, 1),
-                      minHeight: 6,
-                      backgroundColor: colors.surface2,
-                      valueColor: AlwaysStoppedAnimation(colors.primary),
+                      child: Text(_moods[i].$1, style: const TextStyle(fontSize: 24)),
                     ),
                   ),
-                ],
+                ),
+            ],
+          ),
+          if (mood != null)
+            TextButton(
+              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+              onPressed: () => ref.read(navIndexProvider.notifier).state = AppTab.journal,
+              child: Text('Write about it in your journal', style: AppTypography.label.copyWith(color: colors.primary)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoachPrompt extends StatelessWidget {
+  const _CoachPrompt({required this.colors});
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return _TappableSection(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen())),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
+              borderRadius: AppRadius.borderRadiusSm,
+            ),
+            child: Icon(LucideIcons.messageCircle, size: 20, color: colors.primary),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const EyebrowLabel('Ask your coach'),
+                Text(
+                  '“What should I tackle first today?”',
+                  style: AppTypography.body.copyWith(color: colors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Icon(LucideIcons.chevronRight, size: 18, color: colors.textTertiary),
+        ],
+      ),
+    );
+  }
+}
+
+class _AltitudeWidget extends StatelessWidget {
+  const _AltitudeWidget({required this.colors});
+  final AppColorsExtension colors;
+
+  @override
+  Widget build(BuildContext context) {
+    // Sample numbers until XP is tracked; matches the Profile screen.
+    return _TappableSection(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(title: 'Altitude', trailing: 'Camp 7', colors: colors),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('2,450 m', style: AppTypography.display.copyWith(color: colors.textPrimary)),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text('550 m to Camp 8', style: AppTypography.caption.copyWith(color: colors.textSecondary)),
               ),
-            )),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _Bar(value: 2450 / 3000, color: colors.summit, colors: colors),
         ],
       ),
     );

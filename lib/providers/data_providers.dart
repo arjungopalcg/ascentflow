@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../models/task_model.dart';
 import '../models/goal_model.dart';
+import '../models/savings_goal.dart';
 import '../models/icon_registry.dart';
 import '../services/supabase_service.dart';
 
@@ -260,6 +261,33 @@ final listsProvider = StateNotifierProvider<ListsNotifier, List<ListData>>((ref)
   return ListsNotifier();
 });
 
+class SavingsNotifier extends StateNotifier<List<SavingsGoal>> {
+  SavingsNotifier() : super(_initialSavings);
+
+  void add(SavingsGoal goal) => state = [...state, goal];
+
+  void contribute(String id, double amount) {
+    state = [
+      for (final g in state)
+        if (g.id == id)
+          SavingsGoal(
+            id: g.id,
+            title: g.title,
+            current: (g.current + amount).clamp(0, g.target),
+            target: g.target,
+            color: g.color,
+            currency: g.currency,
+            currencySymbol: g.currencySymbol,
+          )
+        else
+          g
+    ];
+  }
+}
+
+final savingsProvider =
+    StateNotifierProvider<SavingsNotifier, List<SavingsGoal>>((ref) => SavingsNotifier());
+
 // Mock Initial Data
 final _initialTasks = [
   TaskModel(
@@ -350,5 +378,29 @@ final _initialLists = [
     icon: LucideIcons.gift,
     itemCnt: 4,
     members: ['A'],
+  ),
+];
+
+final _initialSavings = <SavingsGoal>[
+  SavingsGoal(
+    id: 's1',
+    title: 'Emergency Fund',
+    current: 2500,
+    target: 5000,
+    color: const Color(0xFF7A62D0),
+  ),
+  SavingsGoal(
+    id: 's2',
+    title: 'Vacation',
+    current: 800,
+    target: 2000,
+    color: const Color(0xFF1FA48A),
+  ),
+  SavingsGoal(
+    id: 's3',
+    title: 'New Laptop',
+    current: 1500,
+    target: 2400,
+    color: const Color(0xFFBB850E),
   ),
 ];

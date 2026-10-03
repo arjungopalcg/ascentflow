@@ -1,4 +1,6 @@
 import 'package:ascent_flow/main.dart';
+import 'package:ascent_flow/providers/prefs_provider.dart';
+import 'package:ascent_flow/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,24 +10,43 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Supabase isn't initialised in tests, so the app runs on its local sample
 // data (3 tasks, 1 completed; 3 goals, 1 met).
 
-Future<void> pumpApp(WidgetTester tester) async {
+/// A returning user who has finished setup.
+const _onboarded = <String, Object>{
+  'profile.name': 'Alex',
+  'profile.onboarded': true,
+  'home.enabled': ['progress', 'plan', 'challenge', 'motivation'],
+};
+
+Future<void> pumpApp(
+  WidgetTester tester, {
+  Map<String, Object> prefs = _onboarded,
+  double textScale = 1,
+}) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
+  tester.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
-  await tester.pumpWidget(const ProviderScope(child: AscentFlowApp()));
-  // Let the home screen's entrance animation finish.
+  SharedPreferences.setMockInitialValues(prefs);
+  final sp = await SharedPreferences.getInstance();
+  await tester.pumpWidget(ProviderScope(
+    overrides: [sharedPrefsProvider.overrideWithValue(sp)],
+    child: const AscentFlowApp(),
+  ));
+  // Let the climb panel's draw-in finish.
   await tester.pump(const Duration(seconds: 2));
 }
 
-void main() {
-  setUp(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-    SharedPreferences.setMockInitialValues({});
-  });
+/// Home's own scroll view (other tabs stay mounted in an IndexedStack).
+final _homeScroll = find
+    .descendant(of: find.byType(HomeScreen), matching: find.byType(Scrollable))
+    .first;
 
-  testWidgets('Today screen shows the greeting and real progress',
-      (tester) async {
+void main() {
+  setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
+
+  testWidgets('Today screen greets by name and shows real progress', (tester) async {
     await pumpApp(tester);
 
     expect(find.textContaining('Alex'), findsOneWidget);
@@ -40,8 +61,7 @@ void main() {
     }
   });
 
-  testWidgets('Ticking a plan item updates today\'s progress',
-      (tester) async {
+  testWidgets('Ticking a plan item updates today\'s progress', (tester) async {
     await pumpApp(tester);
 
     await tester.tap(find.text('Read 20 pages'));
@@ -50,8 +70,7 @@ void main() {
     expect(find.text('3 of 6 done'), findsOneWidget);
   });
 
-  testWidgets('Tasks tab lists upcoming tasks with readable priorities',
-      (tester) async {
+  testWidgets('Tasks tab lists upcoming tasks with readable priorities', (tester) async {
     await pumpApp(tester);
 
     await tester.tap(find.text('Tasks').last);
@@ -62,21 +81,73 @@ void main() {
     expect(find.text('2 left'), findsOneWidget);
   });
 
-  testWidgets('Main tabs lay out without overflow at 150% text size',
-      (tester) async {
-    tester.view.physicalSize = const Size(1170, 2532);
-    tester.view.devicePixelRatio = 3;
-    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
-    addTearDown(tester.view.reset);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-
-    await tester.pumpWidget(const ProviderScope(child: AscentFlowApp()));
-    await tester.pump(const Duration(seconds: 2));
+  testWidgets('Main tabs lay out without overflow at 150% text size', (tester) async {
+    await pumpApp(tester, textScale: 1.5);
 
     for (final tab in ['Tasks', 'Focus', 'Journal', 'More', 'Today']) {
       await tester.tap(find.text(tab).last);
       await tester.pump(const Duration(seconds: 1));
       expect(tester.takeException(), isNull, reason: '$tab tab');
     }
+  });
+
+  testWidgets('First launch: setup builds home from the answers', (tester) async {
+    await pumpApp(tester, prefs: const {});
+
+    await tester.tap(find.text('Get started'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Sam');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // Continue stays disabled until something is picked.
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('What would you like help with?'), findsOneWidget);
+
+    await tester.tap(find.text('Focus deeply'));
+    await tester.ensureVisible(find.text('Save money'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save money'));
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Here\'s your home screen, Sam'), findsOneWidget);
+    await tester.tap(find.text('Start climbing'));
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.textContaining('Sam'), findsOneWidget);
+    expect(find.text('Focus session'), findsNothing, reason: 'Catalog names are for Edit home');
+    expect(find.text('One thing for 25 minutes.'), findsOneWidget);
+    await tester.scrollUntilVisible(find.textContaining('saved'), 300, scrollable: _homeScroll);
+    expect(find.textContaining('saved'), findsOneWidget);
+    // Not picked, so not on Home.
+    expect(find.text('Today\'s plan'), findsNothing);
+  });
+
+  testWidgets('Edit home adds a widget from another section', (tester) async {
+    await pumpApp(tester);
+
+    await tester.scrollUntilVisible(find.text('Edit home'), 300, scrollable: _homeScroll);
+    await tester.tap(find.text('Edit home'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byTooltip('Add Mood check-in'),
+      300,
+      scrollable: find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable)).first,
+    );
+    await tester.tap(find.byTooltip('Add Mood check-in'));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('How are you feeling?'), 300, scrollable: _homeScroll);
+    expect(find.text('How are you feeling?'), findsOneWidget);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getStringList('home.enabled'), contains('mood'));
   });
 }

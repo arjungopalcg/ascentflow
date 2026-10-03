@@ -19,7 +19,9 @@ class PillButton extends StatefulWidget {
   });
 
   final String label;
-  final VoidCallback onTap;
+
+  /// Null disables the button (shown faded, ignores taps).
+  final VoidCallback? onTap;
   final PillButtonVariant variant;
   final bool isLoading;
   final IconData? icon;
@@ -43,9 +45,10 @@ class _PillButtonState extends State<PillButton>
       duration: const Duration(milliseconds: 80),
       reverseDuration: const Duration(milliseconds: 200),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -58,56 +61,61 @@ class _PillButtonState extends State<PillButton>
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        HapticFeedback.lightImpact();
-        widget.onTap();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: AnimatedBuilder(
-        animation: _scale,
-        builder: (context, child) => Transform.scale(
-          scale: _scale.value,
-          child: child,
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
-          decoration: _buildDecoration(colors),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.icon != null) ...[
-                Icon(
-                  widget.icon,
-                  size: 18,
-                  color: _textColor(colors),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-              ],
-              if (widget.isLoading)
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: _textColor(colors),
-                  ),
-                )
-              else
-                Flexible(
-                  child: Text(
-                    widget.label,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.label.copyWith(
-                      color: _textColor(colors),
-                      fontWeight: FontWeight.w600,
+    final enabled = widget.onTap != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: AnimatedOpacity(
+        duration: AppDuration.fast,
+        opacity: enabled ? 1 : 0.4,
+        child: GestureDetector(
+          onTapDown: enabled ? (_) => _controller.forward() : null,
+          onTapUp: enabled
+              ? (_) {
+                  _controller.reverse();
+                  HapticFeedback.lightImpact();
+                  widget.onTap!();
+                }
+              : null,
+          onTapCancel: enabled ? () => _controller.reverse() : null,
+          child: AnimatedBuilder(
+            animation: _scale,
+            builder: (context, child) =>
+                Transform.scale(scale: _scale.value, child: child),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
+              decoration: _buildDecoration(colors),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (widget.icon != null) ...[
+                    Icon(widget.icon, size: 18, color: _textColor(colors)),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
+                  if (widget.isLoading)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _textColor(colors),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.label.copyWith(
+                          color: _textColor(colors),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -151,11 +159,7 @@ class _PillButtonState extends State<PillButton>
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppFab extends StatefulWidget {
-  const AppFab({
-    super.key,
-    required this.onTap,
-    this.icon = Icons.add,
-  });
+  const AppFab({super.key, required this.onTap, this.icon = Icons.add});
 
   final VoidCallback onTap;
   final IconData icon;
@@ -176,9 +180,10 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 100),
       reverseDuration: const Duration(milliseconds: 200),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -200,10 +205,8 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
       onTapCancel: () => _controller.reverse(),
       child: AnimatedBuilder(
         animation: _scale,
-        builder: (context, child) => Transform.scale(
-          scale: _scale.value,
-          child: child,
-        ),
+        builder: (context, child) =>
+            Transform.scale(scale: _scale.value, child: child),
         child: Container(
           width: 56,
           height: 56,
@@ -212,7 +215,9 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
             color: colors.primary,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.12),
+                color: Colors.black.withValues(
+                  alpha: colors.isDark ? 0.3 : 0.12,
+                ),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),

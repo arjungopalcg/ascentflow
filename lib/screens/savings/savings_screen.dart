@@ -2,7 +2,11 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../models/savings_goal.dart';
+import '../../providers/data_providers.dart';
 
 import '../../design/theme.dart';
 import '../../design/typography.dart';
@@ -10,25 +14,6 @@ import '../../design/tokens.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/buttons.dart';
 
-class SavingsGoal {
-  final String id;
-  String title;
-  double current;
-  double target;
-  Color color;
-  String currency;
-  String currencySymbol;
-
-  SavingsGoal({
-    required this.id,
-    required this.title,
-    required this.current,
-    required this.target,
-    required this.color,
-    this.currency = 'USD',
-    this.currencySymbol = '\$',
-  });
-}
 
 const _currencies = [
   {'code': 'USD', 'symbol': '\$', 'name': 'US Dollar'},
@@ -47,37 +32,16 @@ const _currencies = [
   {'code': 'SAR', 'symbol': '﷼', 'name': 'Saudi Riyal'},
 ];
 
-class SavingsScreen extends StatefulWidget {
+class SavingsScreen extends ConsumerStatefulWidget {
   const SavingsScreen({super.key});
 
   @override
-  State<SavingsScreen> createState() => _SavingsScreenState();
+  ConsumerState<SavingsScreen> createState() => _SavingsScreenState();
 }
 
-class _SavingsScreenState extends State<SavingsScreen> {
-  final _goals = <SavingsGoal>[
-    SavingsGoal(
-      id: 's1',
-      title: 'Emergency Fund',
-      current: 2500,
-      target: 5000,
-      color: const Color(0xFF7A62D0),
-    ),
-    SavingsGoal(
-      id: 's2',
-      title: 'Vacation',
-      current: 800,
-      target: 2000,
-      color: const Color(0xFF1FA48A),
-    ),
-    SavingsGoal(
-      id: 's3',
-      title: 'New Laptop',
-      current: 1500,
-      target: 2400,
-      color: const Color(0xFFBB850E),
-    ),
-  ];
+class _SavingsScreenState extends ConsumerState<SavingsScreen> {
+  // Read through the provider so Home's savings widget sees the same goals.
+  List<SavingsGoal> get _goals => ref.read(savingsProvider);
 
   void _showCreateGoalSheet() {
     HapticFeedback.selectionClick();
@@ -86,7 +50,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _CreateGoalSheet(
-        onAdd: (goal) => setState(() => _goals.add(goal)),
+        onAdd: (goal) => ref.read(savingsProvider.notifier).add(goal),
       ),
     );
   }
@@ -99,10 +63,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => _AddContributionSheet(
         goals: _goals,
-        onAdd: (id, amount) => setState(() {
-          final g = _goals.firstWhere((x) => x.id == id);
-          g.current = (g.current + amount).clamp(0, g.target);
-        }),
+        onAdd: (id, amount) =>
+            ref.read(savingsProvider.notifier).contribute(id, amount),
       ),
     );
   }
@@ -110,6 +72,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    ref.watch(savingsProvider);
 
     final totalCurrent = _goals.fold<double>(0, (s, g) => s + g.current);
     final totalTarget = _goals.fold<double>(0, (s, g) => s + g.target);

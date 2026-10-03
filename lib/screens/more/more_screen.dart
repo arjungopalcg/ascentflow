@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
 import '../../widgets/common.dart';
@@ -25,12 +27,42 @@ class _MoreScreenState extends State<MoreScreen>
   late final AnimationController _staggerController;
 
   static const _menuItems = [
-    _MenuItem(icon: LucideIcons.target, title: 'Goals', subtitle: 'Track targets', color: AppColors.primaryDark),
-    _MenuItem(icon: LucideIcons.messageSquare, title: 'AI Chat', subtitle: 'Your AI coach', color: AppColors.mint),
-    _MenuItem(icon: LucideIcons.calendarCheck, title: 'Planner', subtitle: 'Daily planning', color: AppColors.amber),
-    _MenuItem(icon: LucideIcons.list, title: 'My Lists', subtitle: 'Personal lists', color: AppColors.primaryLighter),
-    _MenuItem(icon: LucideIcons.piggyBank, title: 'Savings', subtitle: 'Financial goals', color: AppColors.mint),
-    _MenuItem(icon: LucideIcons.calendar, title: 'Calendar', subtitle: 'Unified view', color: AppColors.amber),
+    _MenuItem(
+      icon: LucideIcons.target,
+      title: 'Goals',
+      subtitle: 'Track targets',
+      color: AppColors.primaryDark,
+    ),
+    _MenuItem(
+      icon: LucideIcons.messageSquare,
+      title: 'AI Chat',
+      subtitle: 'Your AI coach',
+      color: AppColors.mint,
+    ),
+    _MenuItem(
+      icon: LucideIcons.calendarCheck,
+      title: 'Planner',
+      subtitle: 'Daily planning',
+      color: AppColors.amber,
+    ),
+    _MenuItem(
+      icon: LucideIcons.list,
+      title: 'My Lists',
+      subtitle: 'Personal lists',
+      color: AppColors.primaryLighter,
+    ),
+    _MenuItem(
+      icon: LucideIcons.piggyBank,
+      title: 'Savings',
+      subtitle: 'Financial goals',
+      color: AppColors.mint,
+    ),
+    _MenuItem(
+      icon: LucideIcons.calendar,
+      title: 'Calendar',
+      subtitle: 'Unified view',
+      color: AppColors.amber,
+    ),
   ];
 
   @override
@@ -77,51 +109,75 @@ class _MoreScreenState extends State<MoreScreen>
                 // Profile pill
                 Flexible(
                   child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.xxs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.surface2,
-                      borderRadius: AppRadius.borderRadiusPill,
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colors.primary.withValues(alpha: 0.15),
-                          ),
-                          child: Icon(LucideIcons.user, size: 14, color: colors.primary),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
                         ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Flexible(
-                          child: Text(
-                            'Alex',
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.label.copyWith(
-                              color: colors.textPrimary,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xxs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surface2,
+                        borderRadius: AppRadius.borderRadiusPill,
+                        border: Border.all(color: colors.border),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colors.primary.withValues(alpha: 0.15),
+                            ),
+                            child: Icon(
+                              LucideIcons.user,
+                              size: 14,
+                              color: colors.primary,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.xxs),
-                        Icon(LucideIcons.chevronRight, size: 14, color: colors.textTertiary),
-                      ],
+                          const SizedBox(width: AppSpacing.xs),
+                          Flexible(
+                            child: Consumer(
+                              builder: (context, ref, _) => Text(
+                                ref
+                                        .watch(
+                                          userProfileProvider.select(
+                                            (p) => p.name,
+                                          ),
+                                        )
+                                        .isEmpty
+                                    ? 'Profile'
+                                    : ref.watch(
+                                        userProfileProvider.select(
+                                          (p) => p.name,
+                                        ),
+                                      ),
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.label.copyWith(
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xxs),
+                          Icon(
+                            LucideIcons.chevronRight,
+                            size: 14,
+                            color: colors.textTertiary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 ),
               ],
             ),
@@ -139,7 +195,8 @@ class _MoreScreenState extends State<MoreScreen>
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSpacing.sm,
                 crossAxisSpacing: AppSpacing.sm,
-                mainAxisExtent: 100 + MediaQuery.textScalerOf(context).scale(44),
+                mainAxisExtent:
+                    100 + MediaQuery.textScalerOf(context).scale(44),
               ),
               itemCount: _menuItems.length,
               itemBuilder: (context, index) {
@@ -163,7 +220,9 @@ class _MoreScreenState extends State<MoreScreen>
                     } else if (index == 2) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const PlannerScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const PlannerScreen(),
+                        ),
                       );
                     } else if (index == 3) {
                       Navigator.push(
@@ -173,12 +232,16 @@ class _MoreScreenState extends State<MoreScreen>
                     } else if (index == 4) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const SavingsScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const SavingsScreen(),
+                        ),
                       );
                     } else if (index == 5) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const CalendarScreen(),
+                        ),
                       );
                     }
                   },
@@ -235,10 +298,7 @@ class _AnimatedMenuCard extends StatelessWidget {
       builder: (context, child) {
         return Opacity(
           opacity: opacity.value,
-          child: Transform.scale(
-            scale: scale.value,
-            child: child,
-          ),
+          child: Transform.scale(scale: scale.value, child: child),
         );
       },
       child: GestureDetector(
@@ -259,7 +319,9 @@ class _AnimatedMenuCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
+                  color: colors.primary.withValues(
+                    alpha: colors.isDark ? 0.18 : 0.1,
+                  ),
                   borderRadius: AppRadius.borderRadiusSm,
                 ),
                 child: Icon(item.icon, size: 20, color: colors.primary),

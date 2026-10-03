@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'design/theme.dart';
+import 'providers/prefs_provider.dart';
+import 'providers/user_profile_provider.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'services/supabase_service.dart';
 import 'screens/main_scaffold.dart';
 
@@ -58,8 +61,12 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
   await SupabaseService.init();
-  runApp(const ProviderScope(child: AscentFlowApp()));
+  runApp(ProviderScope(
+    overrides: [sharedPrefsProvider.overrideWithValue(prefs)],
+    child: const AscentFlowApp(),
+  ));
 }
 
 class AscentFlowApp extends ConsumerWidget {
@@ -68,6 +75,7 @@ class AscentFlowApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final onboarded = ref.watch(userProfileProvider.select((p) => p.onboarded));
 
     return MaterialApp(
       title: 'Ascent Flow',
@@ -86,7 +94,8 @@ class AscentFlowApp extends ConsumerWidget {
           child: child!,
         );
       },
-      home: const MainScaffold(),
+      // First launch runs setup; it builds the home screen from the answers.
+      home: onboarded ? const MainScaffold() : const OnboardingScreen(),
     );
   }
 }
