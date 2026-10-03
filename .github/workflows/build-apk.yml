@@ -1,0 +1,68 @@
+name: Build Android APK
+
+# Builds an installable APK on every push to a claude/* branch or main,
+# and on demand from the Actions tab. The APK is attached to a pre-release
+# so it can be downloaded straight to a phone.
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+
+      # Signed with the debug key (fine for installing on your own phone;
+      # the Play Store needs a real upload key).
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/AscentFlow-${{ github.run_number }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AscentFlow-apk
+          path: dist/*.apk
+
+      - name: Publish pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: AscentFlow build ${{ github.run_number }}
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          body: |
+            Installable test build from `${{ github.ref_name }}` (${{ github.sha }}).
+            On your Android phone: download the APK below, open it, and allow
+            "Install unknown apps" for your browser when asked.
+          files: dist/*.apk
