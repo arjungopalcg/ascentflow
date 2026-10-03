@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Supabase isn't initialised in tests, so the app runs on its local sample
@@ -185,5 +186,32 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getStringList('home.enabled'), contains('mood'));
+  });
+
+  testWidgets('Giving up a focus session makes Pip slip', (tester) async {
+    await pumpApp(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    final climb = container.read(climbProvider.notifier);
+    for (var i = 0; i < 4; i++) {
+      climb.record(ClimbAction.task);
+    }
+    await tester.pump(const Duration(seconds: 4));
+    final before = container.read(climbProvider).altitude;
+    expect(before, greaterThan(focusFallMetres)); // and below the first camp
+
+    await tester.tap(find.text('Focus').last);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byIcon(LucideIcons.play));
+    await tester.pump(const Duration(seconds: 2));
+
+    await tester.tap(find.byIcon(LucideIcons.rotateCcw));
+    await tester.pump(const Duration(seconds: 1)); // the timer keeps running
+    expect(find.text('Give up this climb?'), findsOneWidget);
+    await tester.tap(find.text('Give up'));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(container.read(climbProvider).altitude, before - focusFallMetres);
+    expect(container.read(climbProvider).falls, 1);
+    await tester.pump(const Duration(seconds: 4)); // slip banner finishes
   });
 }

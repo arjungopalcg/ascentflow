@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,8 @@ import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
 import '../../game/climb_engine.dart';
+import '../../providers/focus_settings_provider.dart';
+import '../../services/focus_guard.dart';
 import '../../widgets/common.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/pip.dart';
@@ -20,7 +23,7 @@ class FocusScreen extends ConsumerStatefulWidget {
 }
 
 class _FocusScreenState extends ConsumerState<FocusScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _timerController;
 
   int _sessionMinutes = 25;
@@ -36,7 +39,21 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
 
   bool _isRunning = false;
   bool _isCompleted = false;
-  bool _isBlockerEnabled = false;
+
+  // ── Focus session state ────────────────────────────────────────────
+  /// A focus session is under way (running or paused): locked, and leaving
+  /// early makes Pip slip.
+  bool _sessionStarted = false;
+  bool _inSettings = false;
+
+  /// Wall-clock timing, so the session keeps counting while the screen is off.
+  DateTime? _runStartedAt;
+  double _runStartFraction = 0;
+
+  /// When the user left the app (screen still on) during a session.
+  DateTime? _leftAt;
+  static const _leaveGrace = Duration(seconds: 10);
+  StreamSubscription<String>? _blockedSub;
 
   @override
   void initState() {
@@ -45,46 +62,214 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
         AnimationController(
           vsync: this,
           duration: Duration(minutes: _sessionMinutes),
+          // A real clock: "remove animations" must not shorten the session.
+          animationBehavior: AnimationBehavior.preserve,
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             HapticFeedback.heavyImpact();
             if (_isFocusMode) ref.read(climbProvider.notifier).record(ClimbAction.focus);
-            setState(() => _isCompleted = true);
+            _endSession();
+            setState(() {
+              _isRunning = false;
+              _isCompleted = true;
+            });
           }
         });
+    WidgetsBinding.instance.addObserver(this);
+    _blockedSub = FocusGuard.blockedApps.listen((label) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$label is blocked until your session ends. Back to it!')),
+      );
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _blockedSub?.cancel();
+    if (_sessionStarted) _endSession();
     _timerController.dispose();
     super.dispose();
   }
 
-  void _toggleTimer() {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      if (_isRunning) {
-        _timerController.stop();
-        _isRunning = false;
-      } else {
-        _timerController.duration = Duration(minutes: _sessionMinutes);
-        _timerController.forward(from: _timerController.value);
-        _isRunning = true;
+  // ── Leaving the app during a session ───────────────────────────────
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_sessionStarted || !_isFocusMode) return;
+    if (state == AppLifecycleState.paused) {
+      // Turning the screen off isn't leaving; only count it if it's on.
+      FocusGuard.isScreenOn().then((on) {
+        if (on && _sessionStarted) _leftAt ??= DateTime.now();
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      final left = _inSettings ? null : _leftAt;
+      _leftAt = null;
+      _inSettings = false;
+      _resyncFromClock();
+      if (left != null && DateTime.now().difference(left) > _leaveGrace && _sessionStarted && !_isCompleted) {
+        _giveUp(reason: 'You left the app during focus.');
       }
-    });
+    }
   }
 
-  void _resetTimer() {
-    HapticFeedback.lightImpact();
+  // ── Timer ──────────────────────────────────────────────────────────
+  Duration get _total => Duration(minutes: _sessionMinutes);
+
+  void _startRunning() {
+    _runStartedAt = DateTime.now();
+    _runStartFraction = _timerController.value;
+    _timerController.duration = _total;
+    _timerController.forward(from: _runStartFraction);
+    _isRunning = true;
+  }
+
+  void _stopRunning() {
+    _timerController.stop();
+    _isRunning = false;
+    _runStartedAt = null;
+  }
+
+  /// Catches the timer up with the real clock (frames stop while the app is
+  /// in the background, but the session keeps going).
+  void _resyncFromClock() {
+    final started = _runStartedAt;
+    if (!_isRunning || started == null) return;
+    final fraction = _runStartFraction +
+        DateTime.now().difference(started).inMilliseconds / _total.inMilliseconds;
+    if (fraction >= 1) {
+      _timerController.value = 1; // completes the session
+    } else {
+      _timerController.forward(from: fraction);
+    }
+  }
+
+  // ── Focus lock ─────────────────────────────────────────────────────
+  Future<void> _beginSession() async {
+    _sessionStarted = true;
+    final settings = ref.read(focusSettingsProvider);
+    if (!settings.lockEnabled || !FocusGuard.supported) return;
+    final messenger = ScaffoldMessenger.of(context);
+    await FocusGuard.startLock();
+    if (settings.blocked.isNotEmpty &&
+        await FocusGuard.hasUsageAccess() &&
+        await FocusGuard.hasOverlayPermission()) {
+      await FocusGuard.startBlocking(settings.blocked.toList());
+    }
+    // App pinning may be switched off on this phone.
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    if (mounted && _sessionStarted && !await FocusGuard.isLocked()) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Turn on app pinning so your phone can lock during focus.'),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () {
+              // Going to Settings to fix the lock isn't giving up.
+              _inSettings = true;
+              FocusGuard.openPinningSettings();
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _endSession() {
+    if (!_sessionStarted) return;
+    _sessionStarted = false;
+    _leftAt = null;
+    FocusGuard.stopBlocking();
+    FocusGuard.stopLock();
+  }
+
+  /// Ends the focus session early: Pip slips down the mountain.
+  void _giveUp({String? reason}) {
+    if (!_sessionStarted) return; // it finished while we were asking
+    ref.read(climbProvider.notifier).slip();
+    _endSession();
+    if (!mounted) return;
     setState(() {
+      _stopRunning();
       _timerController.reset();
-      _isRunning = false;
+      _isCompleted = false;
+    });
+    if (reason != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(reason)));
+    }
+  }
+
+  Future<bool> _confirmGiveUp() async {
+    final colors = context.colors;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Pip(size: 72, mood: PipMood.oops),
+        title: Text('Give up this climb?', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
+        content: Text(
+          'Pip will slip $focusFallMetres m down the mountain. Your last camp will catch the fall.',
+          style: AppTypography.body.copyWith(color: colors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Give up', style: TextStyle(color: colors.danger)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep focusing'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Blocks changing mode or length mid-session.
+  bool _guardSession() {
+    if (!_sessionStarted) return false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Finish this session first, or reset to give up.')),
+    );
+    return true;
+  }
+
+  void _toggleTimer() {
+    HapticFeedback.mediumImpact();
+    if (_isRunning) {
+      // Pausing is allowed; the session (and the lock) stays on.
+      setState(_stopRunning);
+      return;
+    }
+    if (_isFocusMode && !_sessionStarted) _beginSession();
+    setState(_startRunning);
+  }
+
+  Future<void> _resetTimer() async {
+    HapticFeedback.lightImpact();
+    if (_sessionStarted && _isFocusMode) {
+      if (await _confirmGiveUp()) _giveUp();
+      return;
+    }
+    setState(() {
+      _stopRunning();
+      _timerController.reset();
       _isCompleted = false;
     });
   }
 
+  Future<void> _skip() async {
+    if (_isFocusMode) {
+      // Skipping focus isn't finishing it.
+      if (_sessionStarted && await _confirmGiveUp()) _giveUp();
+      return;
+    }
+    _timerController.value = 1.0; // end the break
+  }
+
   void _toggleMode(bool isFocus) {
     if (_isFocusMode == isFocus) return;
+    if (_guardSession()) return;
     HapticFeedback.selectionClick();
     setState(() {
       _isFocusMode = isFocus;
@@ -113,6 +298,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
 
   void _selectBreakDuration(int index) {
     if (_isFocusMode) return;
+    if (_guardSession()) return;
     HapticFeedback.selectionClick();
 
     if (_isRunning) {
@@ -128,6 +314,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
 
   void _selectFocusDuration(int index) {
     if (!_isFocusMode) return;
+    if (_guardSession()) return;
     HapticFeedback.selectionClick();
 
     if (_isRunning) {
@@ -281,6 +468,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final lockOn = ref.watch(focusSettingsProvider).lockEnabled;
 
     if (_isCompleted) {
       return _CompletedView(colors: colors, onReset: _resetTimer);
@@ -309,17 +497,17 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
                             Icon(
                               LucideIcons.shieldCheck,
                               size: 20,
-                              color: _isBlockerEnabled
+                              color: lockOn
                                   ? colors.mint
                                   : colors.textSecondary,
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             Flexible(
                               child: Text(
-                                'App Blocker',
+                                'Focus lock',
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.label.copyWith(
-                                  color: _isBlockerEnabled
+                                  color: lockOn
                                       ? colors.textPrimary
                                       : colors.textSecondary,
                                 ),
@@ -327,10 +515,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
                             ),
                             const SizedBox(width: AppSpacing.md),
                             Switch(
-                              value: _isBlockerEnabled,
+                              value: lockOn,
                               onChanged: (val) {
                                 HapticFeedback.selectionClick();
-                                setState(() => _isBlockerEnabled = val);
+                                ref.read(focusSettingsProvider.notifier).setLock(val);
                               },
                               activeThumbColor: colors.mint,
                               activeTrackColor: colors.mint.withValues(
@@ -502,9 +690,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
                     const SizedBox(width: AppSpacing.xxl),
                     _CircleButton(
                       icon: LucideIcons.skipForward,
-                      onTap: () {
-                        _timerController.value = 1.0;
-                      },
+                      onTap: _skip,
                       colors: colors,
                     ),
                   ],

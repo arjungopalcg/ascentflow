@@ -99,4 +99,22 @@ void main() {
     expect(again.state.altitude, 30);
     expect(again.state.reflectToday, 1);
   });
+
+  test('giving up focus slips 50 m, but a camp catches the fall', () async {
+    final e = await engine();
+    final events = <ClimbEvent>[];
+    e.events.listen(events.add);
+    for (var i = 0; i < 14; i++) {
+      e.record(ClimbAction.focus); // 560 m: Camp 2 starts at 500 m
+    }
+    e.slip();
+    expect(e.state.altitude, 510);
+    e.slip();
+    expect(e.state.altitude, 500, reason: 'camp ledge');
+    expect(e.state.falls, 2);
+    await Future<void>.delayed(Duration.zero);
+    final slips = events.whereType<SlipEvent>().toList();
+    expect(slips.map((s) => s.metres), [50, 10]);
+    expect(slips.last.caughtByCamp, isTrue);
+  });
 }

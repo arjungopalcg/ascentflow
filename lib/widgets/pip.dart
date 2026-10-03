@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 // motion.
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum PipMood { idle, wave, cheer, sleep }
+enum PipMood { idle, wave, cheer, sleep, oops }
 
 class Pip extends StatefulWidget {
   const Pip({super.key, this.size = 96, this.mood = PipMood.idle});
@@ -60,6 +60,7 @@ class _PipState extends State<Pip> with TickerProviderStateMixin {
         PipMood.wave => 900,
         PipMood.sleep => 3200,
         PipMood.idle => 2600,
+        PipMood.oops => 700,
       },
     );
     _loop.repeat();
@@ -90,6 +91,7 @@ class _PipState extends State<Pip> with TickerProviderStateMixin {
       PipMood.cheer => 'Pip the marmot, cheering',
       PipMood.wave => 'Pip the marmot, waving',
       PipMood.sleep => 'Pip the marmot, napping',
+      PipMood.oops => 'Pip the marmot, slipping',
       PipMood.idle => 'Pip the marmot',
     };
     return Semantics(
@@ -142,6 +144,12 @@ class _PipPainter extends CustomPainter {
 
     canvas.save();
     canvas.translate(0, -jump);
+    if (mood == PipMood.oops) {
+      // A dizzy wobble.
+      canvas.translate(50, 94);
+      canvas.rotate(0.12 * wave);
+      canvas.translate(-50, -94);
+    }
     if (mood == PipMood.idle || mood == PipMood.sleep) {
       // Gentle breathing.
       final breathe = 1 + 0.018 * wave;
@@ -216,6 +224,15 @@ class _PipPainter extends CustomPainter {
       for (final x in [41.0, 59.0]) {
         canvas.drawArc(Rect.fromCenter(center: Offset(x, 38), width: 7, height: 5), 0.15, math.pi - 0.3, false, closed);
       }
+    } else if (mood == PipMood.oops) {
+      // Squeezed "> <" eyes.
+      final squeeze = Paint()
+        ..color = _ink
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPath(Path()..moveTo(38, 35)..lineTo(43, 38)..lineTo(38, 41), squeeze);
+      canvas.drawPath(Path()..moveTo(62, 35)..lineTo(57, 38)..lineTo(62, 41), squeeze);
     } else if (mood == PipMood.cheer) {
       // Happy "^ ^" eyes.
       final happy = Paint()
@@ -242,8 +259,10 @@ class _PipPainter extends CustomPainter {
       Paint()..color = const Color(0xFF4A2E22),
     );
 
-    // Mouth: open grin when cheering, otherwise a little smile and teeth.
-    if (mood == PipMood.cheer) {
+    // Mouth: open grin when cheering, "o" when slipping, otherwise a smile.
+    if (mood == PipMood.oops) {
+      canvas.drawOval(Rect.fromCenter(center: const Offset(50, 50), width: 5, height: 6), ink);
+    } else if (mood == PipMood.cheer) {
       final mouth = Path()
         ..moveTo(44, 47.5)
         ..quadraticBezierTo(50, 57, 56, 47.5)

@@ -13,6 +13,7 @@ import '../game/climb_engine.dart';
 import '../screens/celebrations/summit_screen.dart';
 import 'campfire.dart';
 import 'confetti.dart';
+import 'pip.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CELEBRATION LAYER — listens to the climb engine and plays the moment:
@@ -54,6 +55,10 @@ class _CelebrationLayerState extends ConsumerState<CelebrationLayer> {
       case GainEvent():
         HapticFeedback.mediumImpact();
         setState(() => _gains.add(_Gain(_nextId++, e)));
+      case SlipEvent():
+        HapticFeedback.heavyImpact();
+        _banners.add(e);
+        _showNextBanner();
       case StreakEvent() || CampEvent():
         _banners.add(e);
         _showNextBanner();
@@ -235,6 +240,13 @@ class _Banner extends StatelessWidget {
               : days == 1
                   ? 'Climb tomorrow to keep it burning.'
                   : 'Your campfire is growing. See you tomorrow.',
+        ),
+      SlipEvent(:final metres, :final caughtByCamp) => (
+          const Pip(size: 52, mood: PipMood.oops),
+          'Pip slipped $metres m',
+          caughtByCamp
+              ? 'You left focus early. Your last camp caught the fall.'
+              : 'You left focus early. Finish the next one to climb back up.',
         ),
       CampEvent(:final camp) => (
           Icon(LucideIcons.tent, size: 40, color: AppColors.sky),

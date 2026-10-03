@@ -59,6 +59,11 @@ const expeditions = [
 
 const campEvery = 500;
 
+/// How far you slip for giving up a focus session. More than a session earns
+/// (40 m), so quitting costs more than not starting. Camps are safe ledges:
+/// you never fall below the last one you reached.
+const focusFallMetres = 50;
+
 sealed class ClimbEvent {
   const ClimbEvent();
 }
@@ -86,6 +91,16 @@ class DaySummitEvent extends ClimbEvent {
   final int streak;
 }
 
+class SlipEvent extends ClimbEvent {
+  const SlipEvent(this.metres, {this.caughtByCamp = false});
+
+  /// How far you actually fell (may be less than [focusFallMetres]).
+  final int metres;
+
+  /// True when the camp ledge stopped the fall short.
+  final bool caughtByCamp;
+}
+
 class PeakSummitEvent extends ClimbEvent {
   const PeakSummitEvent(this.peak);
   final Peak peak;
@@ -105,6 +120,7 @@ class ClimbState {
     this.restDays = 0,
     this.bestStreak = 0,
     this.summitDays = 0,
+    this.falls = 0,
   });
 
   final int altitude;
@@ -119,6 +135,9 @@ class ClimbState {
   final int restDays;
   final int bestStreak;
   final int summitDays;
+
+  /// Focus sessions given up.
+  final int falls;
 
   int get camp => altitude ~/ campEvery + 1;
   int get metresToNextCamp => campEvery - altitude % campEvery;
@@ -154,6 +173,7 @@ class ClimbState {
     int? restDays,
     int? bestStreak,
     int? summitDays,
+    int? falls,
   }) =>
       ClimbState(
         altitude: altitude ?? this.altitude,
@@ -168,6 +188,7 @@ class ClimbState {
         restDays: restDays ?? this.restDays,
         bestStreak: bestStreak ?? this.bestStreak,
         summitDays: summitDays ?? this.summitDays,
+        falls: falls ?? this.falls,
       );
 
   Map<String, Object?> toJson() => {
@@ -183,6 +204,7 @@ class ClimbState {
         'restDays': restDays,
         'bestStreak': bestStreak,
         'summitDays': summitDays,
+        'falls': falls,
       };
 
   factory ClimbState.fromJson(Map<String, Object?> j) => ClimbState(
@@ -198,6 +220,7 @@ class ClimbState {
         restDays: j['restDays'] as int? ?? 0,
         bestStreak: j['bestStreak'] as int? ?? 0,
         summitDays: j['summitDays'] as int? ?? 0,
+        falls: j['falls'] as int? ?? 0,
       );
 }
 
@@ -323,6 +346,23 @@ class ClimbNotifier extends StateNotifier<ClimbState> {
           : null,
     );
     _save();
+  }
+
+  /// Giving up a focus session: slip down the mountain, but never below the
+  /// last camp you reached.
+  void slip([int metres = focusFallMetres]) {
+    final s = _rollover(state);
+    final campFloor = (s.altitude ~/ campEvery) * campEvery;
+    final target = s.altitude - metres;
+    final landed = target < campFloor ? campFloor : target;
+    final fell = s.altitude - landed;
+    state = s.copyWith(
+      altitude: landed,
+      metresToday: (s.metresToday - fell).clamp(0, 1 << 31),
+      falls: s.falls + 1,
+    );
+    _save();
+    _events.add(SlipEvent(fell, caughtByCamp: fell < metres));
   }
 
   void _save() => _prefs.setString(_key, jsonEncode(state.toJson()));

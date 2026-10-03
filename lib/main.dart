@@ -7,6 +7,7 @@ import 'design/theme.dart';
 import 'providers/prefs_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'services/focus_guard.dart';
 import 'services/supabase_service.dart';
 import 'screens/main_scaffold.dart';
 
@@ -61,6 +62,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FocusGuard.init();
   final prefs = await SharedPreferences.getInstance();
   await SupabaseService.init();
   runApp(ProviderScope(
