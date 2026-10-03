@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../design/theme.dart';
@@ -156,7 +156,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                           alignment: Alignment.centerLeft,
                           padding: const EdgeInsets.only(left: AppSpacing.lg),
                           decoration: BoxDecoration(
-                            color: colors.mint.withOpacity(0.15),
+                            color: colors.mint.withValues(alpha: 0.15),
                             borderRadius: AppRadius.borderRadiusMd,
                           ),
                           child: Row(
@@ -173,7 +173,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: AppSpacing.lg),
                           decoration: BoxDecoration(
-                            color: colors.danger.withOpacity(0.15),
+                            color: colors.danger.withValues(alpha: 0.15),
                             borderRadius: AppRadius.borderRadiusMd,
                           ),
                           child: Row(
@@ -226,7 +226,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                         },
                         background: Container(
                           decoration: BoxDecoration(
-                            color: colors.danger.withOpacity(0.15),
+                            color: colors.danger.withValues(alpha: 0.15),
                             borderRadius: AppRadius.borderRadiusMd,
                           ),
                         ),
@@ -234,7 +234,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: AppSpacing.lg),
                           decoration: BoxDecoration(
-                            color: colors.danger.withOpacity(0.15),
+                            color: colors.danger.withValues(alpha: 0.15),
                             borderRadius: AppRadius.borderRadiusMd,
                           ),
                           child: Row(
@@ -322,7 +322,7 @@ class _TaskCard extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isCompleted
-                  ? colors.mint.withOpacity(0.15)
+                  ? colors.mint.withValues(alpha: 0.15)
                   : Colors.transparent,
               border: Border.all(
                 color: isCompleted

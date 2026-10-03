@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../design/theme.dart';
 import '../../design/typography.dart';
@@ -48,7 +48,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
             child: ReorderableListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               itemCount: widgetState.order.length,
-              onReorder: notifier.reorderWidgets,
+              onReorderItem: notifier.reorderWidgets,
               buildDefaultDragHandles: false, // Custom drag handle
               proxyDecorator: (child, index, animation) {
                 return Material(
@@ -73,7 +73,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                       color: colors.surface2,
                       borderRadius: AppRadius.borderRadiusLg,
                       border: Border.all(
-                        color: isEnabled ? colors.primary.withOpacity(0.3) : colors.border,
+                        color: isEnabled ? colors.primary.withValues(alpha: 0.3) : colors.border,
                       ),
                     ),
                     child: ListTile(
@@ -86,8 +86,8 @@ class WidgetSettingsScreen extends ConsumerWidget {
                         height: 40,
                         decoration: BoxDecoration(
                           color: isEnabled 
-                              ? colors.primary.withOpacity(0.1) 
-                              : colors.textTertiary.withOpacity(0.1),
+                              ? colors.primary.withValues(alpha: 0.1) 
+                              : colors.textTertiary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -113,7 +113,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                         children: [
                           Switch.adaptive(
                             value: isEnabled,
-                            activeColor: colors.primary,
+                            activeTrackColor: colors.primary,
                             onChanged: (_) {
                               HapticFeedback.lightImpact();
                               notifier.toggleWidget(id);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../design/theme.dart';
 import '../../design/typography.dart';
@@ -160,7 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     );
                   },
-                  onReorder: (oldIndex, newIndex) {
+                  onReorderItem: (oldIndex, newIndex) {
                     ref.read(homeWidgetsProvider.notifier).reorderWidgets(oldIndex, newIndex);
                   },
                 ),

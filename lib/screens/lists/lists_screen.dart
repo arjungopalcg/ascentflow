@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../design/theme.dart';
@@ -180,7 +180,7 @@ class _ListCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: colors.primary.withOpacity(0.15),
+                    color: colors.primary.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(data.icon, color: colors.primary, size: 20),
@@ -483,7 +483,7 @@ class _ShareListSheet extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (f['color'] as Color).withOpacity(0.2),
+                  color: (f['color'] as Color).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -672,7 +672,7 @@ class _CreateListSheetState extends State<_CreateListSheet> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? colors.primary.withOpacity(0.15)
+                        ? colors.primary.withValues(alpha: 0.15)
                         : colors.surface2,
                     borderRadius: AppRadius.borderRadiusMd,
                     border: Border.all(

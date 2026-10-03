@@ -3,7 +3,7 @@ import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
 import '../../widgets/buttons.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AppTourScreen extends StatefulWidget {
   const AppTourScreen({super.key});

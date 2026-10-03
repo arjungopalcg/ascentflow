@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 
 class HomeWidgetModel {
@@ -98,11 +98,9 @@ class HomeWidgetsNotifier extends StateNotifier<HomeWidgetsState> {
     state = state.copyWith(enabledIds: newEnabledIds);
   }
 
+  /// [newIndex] is already adjusted for the removed item (onReorderItem).
   void reorderWidgets(int oldIndex, int newIndex) {
     final List<String> newOrder = List.from(state.order);
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
     final String item = newOrder.removeAt(oldIndex);
     newOrder.insert(newIndex, item);
     state = state.copyWith(order: newOrder);
