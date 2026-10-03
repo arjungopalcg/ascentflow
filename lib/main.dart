@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'design/theme.dart';
+import 'services/supabase_service.dart';
 import 'screens/main_scaffold.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,8 +56,9 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 // APP ROOT
 // ─────────────────────────────────────────────────────────────────────────────
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SupabaseService.init();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

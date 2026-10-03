@@ -4,6 +4,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../models/task_model.dart';
 import '../models/goal_model.dart';
+import '../models/icon_registry.dart';
+import '../services/supabase_service.dart';
 
 class ListData {
   final String id;
@@ -38,13 +40,76 @@ class ListData {
       items: items ?? this.items,
     );
   }
+
+  factory ListData.fromRow(Map<String, dynamic> row) {
+    final items = List<String>.from(row['items'] as List? ?? const []);
+    return ListData(
+      id: row['id'] as String,
+      title: row['title'] as String,
+      icon: iconFromName(row['icon'] as String?,
+          fallback: LucideIcons.shoppingCart),
+      itemCnt: items.length,
+      members: List<String>.from(row['members'] as List? ?? const ['A']),
+      items: items,
+    );
+  }
+
+  Map<String, dynamic> toRow() {
+    return {
+      'id': id,
+      'title': title,
+      'icon': iconToName(icon),
+      'members': members,
+      'items': items,
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYNC HELPERS — Local state updates first, then Supabase in the background.
+// When Supabase isn't available, notifiers run on local sample data only.
+// ─────────────────────────────────────────────────────────────────────────────
+
+Future<List<Map<String, dynamic>>> _fetchRows(String table) {
+  return SupabaseService.client
+      .from(table)
+      .select()
+      .order('created_at', ascending: true);
+}
+
+/// Runs [op] against Supabase; on failure logs and re-syncs via [reload].
+Future<void> _remote(
+  Future<void> Function() op,
+  Future<void> Function() reload,
+) async {
+  if (!SupabaseService.isReady) return;
+  try {
+    await op();
+  } catch (e) {
+    debugPrint('Supabase write failed, re-syncing: $e');
+    await reload();
+  }
 }
 
 class TasksNotifier extends StateNotifier<List<TaskModel>> {
-  TasksNotifier() : super(_initialTasks);
+  TasksNotifier() : super(SupabaseService.isReady ? const [] : _initialTasks) {
+    if (SupabaseService.isReady) load();
+  }
+
+  static const _table = 'tasks';
+
+  Future<void> load() async {
+    try {
+      final rows = await _fetchRows(_table);
+      if (mounted) state = rows.map(TaskModel.fromRow).toList();
+    } catch (e) {
+      debugPrint('Failed to load tasks: $e');
+    }
+  }
 
   void addTask(TaskModel task) {
     state = [...state, task];
+    _remote(() => SupabaseService.client.from(_table).insert(task.toRow()), load);
   }
 
   void toggleTaskCompletion(String id) {
@@ -55,10 +120,18 @@ class TasksNotifier extends StateNotifier<List<TaskModel>> {
         else
           task
     ];
+    final task = state.firstWhere((t) => t.id == id);
+    _remote(
+      () => SupabaseService.client
+          .from(_table)
+          .update({'is_completed': task.isCompleted}).eq('id', id),
+      load,
+    );
   }
 
   void deleteTask(String id) {
     state = state.where((task) => task.id != id).toList();
+    _remote(() => SupabaseService.client.from(_table).delete().eq('id', id), load);
   }
 }
 
@@ -67,10 +140,24 @@ final tasksProvider = StateNotifierProvider<TasksNotifier, List<TaskModel>>((ref
 });
 
 class GoalsNotifier extends StateNotifier<List<GoalModel>> {
-  GoalsNotifier() : super(_initialGoals);
+  GoalsNotifier() : super(SupabaseService.isReady ? const [] : _initialGoals) {
+    if (SupabaseService.isReady) load();
+  }
+
+  static const _table = 'goals';
+
+  Future<void> load() async {
+    try {
+      final rows = await _fetchRows(_table);
+      if (mounted) state = rows.map(GoalModel.fromRow).toList();
+    } catch (e) {
+      debugPrint('Failed to load goals: $e');
+    }
+  }
 
   void addGoal(GoalModel goal) {
     state = [...state, goal];
+    _remote(() => SupabaseService.client.from(_table).insert(goal.toRow()), load);
   }
 
   void updateGoalProgress(String id, double newProgress) {
@@ -81,10 +168,17 @@ class GoalsNotifier extends StateNotifier<List<GoalModel>> {
         else
           goal
     ];
+    _remote(
+      () => SupabaseService.client
+          .from(_table)
+          .update({'progress': newProgress}).eq('id', id),
+      load,
+    );
   }
 
   void deleteGoal(String id) {
     state = state.where((goal) => goal.id != id).toList();
+    _remote(() => SupabaseService.client.from(_table).delete().eq('id', id), load);
   }
 }
 
@@ -93,10 +187,33 @@ final goalsProvider = StateNotifierProvider<GoalsNotifier, List<GoalModel>>((ref
 });
 
 class ListsNotifier extends StateNotifier<List<ListData>> {
-  ListsNotifier() : super(_initialLists);
+  ListsNotifier() : super(SupabaseService.isReady ? const [] : _initialLists) {
+    if (SupabaseService.isReady) load();
+  }
+
+  static const _table = 'lists';
+
+  Future<void> load() async {
+    try {
+      final rows = await _fetchRows(_table);
+      if (mounted) state = rows.map(ListData.fromRow).toList();
+    } catch (e) {
+      debugPrint('Failed to load lists: $e');
+    }
+  }
+
+  void _save(String listId) {
+    final list = state.firstWhere((l) => l.id == listId);
+    final row = list.toRow()..remove('id');
+    _remote(
+      () => SupabaseService.client.from(_table).update(row).eq('id', listId),
+      load,
+    );
+  }
 
   void addList(ListData list) {
     state = [...state, list];
+    _remote(() => SupabaseService.client.from(_table).insert(list.toRow()), load);
   }
 
   void updateList(ListData updatedList) {
@@ -104,10 +221,12 @@ class ListsNotifier extends StateNotifier<List<ListData>> {
       for (final list in state)
         if (list.id == updatedList.id) updatedList else list
     ];
+    _save(updatedList.id);
   }
 
   void deleteList(String id) {
     state = state.where((list) => list.id != id).toList();
+    _remote(() => SupabaseService.client.from(_table).delete().eq('id', id), load);
   }
 
   void updateListItems(String listId, List<String> items) {
@@ -118,6 +237,7 @@ class ListsNotifier extends StateNotifier<List<ListData>> {
         else
           list
     ];
+    _save(listId);
   }
 
   void addMember(String listId, String initial) {
@@ -132,6 +252,7 @@ class ListsNotifier extends StateNotifier<List<ListData>> {
         else
           list
     ];
+    _save(listId);
   }
 }
 

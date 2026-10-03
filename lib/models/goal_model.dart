@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'icon_registry.dart';
+
 enum GoalTargetType { numeric, yesNo, dailyHabit }
 
 class GoalModel {
@@ -51,5 +53,38 @@ class GoalModel {
       target: target ?? this.target,
       unit: unit ?? this.unit,
     );
+  }
+
+  factory GoalModel.fromRow(Map<String, dynamic> row) {
+    return GoalModel(
+      id: row['id'] as String,
+      title: row['title'] as String,
+      category: row['category'] as String? ?? 'Personal',
+      targetType: GoalTargetType.values.asNameMap()[row['target_type']] ??
+          GoalTargetType.numeric,
+      deadline: row['deadline'] == null
+          ? null
+          : DateTime.parse(row['deadline'] as String).toLocal(),
+      icon: iconFromName(row['icon'] as String?),
+      progressColor: Color((row['progress_color'] as num).toInt()),
+      progress: (row['progress'] as num).toDouble(),
+      target: (row['target'] as num).toDouble(),
+      unit: row['unit'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toRow() {
+    return {
+      'id': id,
+      'title': title,
+      'category': category,
+      'target_type': targetType.name,
+      'deadline': deadline?.toUtc().toIso8601String(),
+      'icon': iconToName(icon),
+      'progress_color': progressColor.toARGB32(),
+      'progress': progress,
+      'target': target,
+      'unit': unit,
+    };
   }
 }
