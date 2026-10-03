@@ -99,7 +99,7 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: colors.background,
       appBar: AppBar(
         title: Text('AI Coach',
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.surface1.withValues(alpha: 0.95),
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),

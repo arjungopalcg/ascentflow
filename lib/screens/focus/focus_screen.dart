@@ -153,7 +153,7 @@ class _FocusScreenState extends State<FocusScreen>
           shape: RoundedRectangleBorder(borderRadius: AppRadius.borderRadiusLg),
           title: Text(
             'Custom Duration',
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary),
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -433,29 +433,34 @@ class _FocusScreenState extends State<FocusScreen>
                               glowColor: colors.primaryGlow,
                               isDark: colors.isDark,
                             ),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _formatTime(progress),
-                                    style: AppTypography.displayXl.copyWith(
-                                      color: colors.textPrimary,
-                                      fontFeatures: const [
-                                        FontFeature.tabularFigures(),
-                                      ],
+                            child: Padding(
+                              // Keep the readout inside the ring at any text size.
+                              padding: const EdgeInsets.all(AppSpacing.xxl),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _formatTime(progress),
+                                      style: AppTypography.displayXl.copyWith(
+                                        color: colors.textPrimary,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _isFocusMode
-                                        ? 'Stay with one thing'
-                                        : 'Rest your eyes',
-                                    style: AppTypography.label.copyWith(
-                                      color: colors.textSecondary,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _isFocusMode
+                                          ? 'Stay with one thing'
+                                          : 'Rest your eyes',
+                                      style: AppTypography.label.copyWith(
+                                        color: colors.textSecondary,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -565,7 +570,7 @@ class _TimerRingPainter extends CustomPainter {
     final arcColor = progress > 0.8
         ? Color.lerp(
             primaryColor,
-            const Color(0xFFC98A3D),
+            const Color(0xFFBB850E),
             (progress - 0.8) / 0.2,
           )!
         : primaryColor;

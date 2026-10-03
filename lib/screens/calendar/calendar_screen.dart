@@ -28,11 +28,11 @@ class _CalendarEvent {
 }
 
 const _eventCategories = [
-  {'label': 'Task', 'color': Color(0xFF8C6A9E)},
-  {'label': 'Habit', 'color': Color(0xFF4E8F8B)},
-  {'label': 'Event', 'color': Color(0xFFC98A3D)},
-  {'label': 'Savings', 'color': Color(0xFF5B7FA8)},
-  {'label': 'Goal', 'color': Color(0xFF6A9A73)},
+  {'label': 'Task', 'color': Color(0xFF7A62D0)},
+  {'label': 'Habit', 'color': Color(0xFF1FA48A)},
+  {'label': 'Event', 'color': Color(0xFFBB850E)},
+  {'label': 'Savings', 'color': Color(0xFF3A82D0)},
+  {'label': 'Goal', 'color': Color(0xFFDB6840)},
 ];
 
 class CalendarScreen extends StatefulWidget {
@@ -51,7 +51,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e1',
       title: 'Ship Phase 9',
       category: 'Task',
-      color: const Color(0xFF8C6A9E),
+      color: const Color(0xFF7A62D0),
       time: '10:00 AM',
       date: DateTime.now(),
     ),
@@ -59,7 +59,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e2',
       title: 'Drink 2L Water',
       category: 'Habit',
-      color: const Color(0xFF4E8F8B),
+      color: const Color(0xFF1FA48A),
       time: 'Anytime',
       date: DateTime.now(),
     ),
@@ -67,7 +67,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e3',
       title: '\$50 to Emergency Fund',
       category: 'Savings',
-      color: const Color(0xFFC98A3D),
+      color: const Color(0xFFBB850E),
       time: 'Auto-Transfer',
       date: DateTime.now().add(const Duration(days: 1)),
     ),
@@ -75,7 +75,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e4',
       title: 'Team Meeting',
       category: 'Event',
-      color: const Color(0xFF5B7FA8),
+      color: const Color(0xFF3A82D0),
       time: '2:00 PM',
       date: DateTime.now().add(const Duration(days: 1)),
     ),
@@ -121,22 +121,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text('Unified Calendar',
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Calendar',
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: Icon(LucideIcons.listFilter, color: colors.textSecondary),
-          ),
-          IconButton(
-            onPressed: _showAddEventSheet,
-            icon: Icon(LucideIcons.plus, color: colors.primary),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-        ],
       ),
       body: Column(
         children: [
@@ -147,13 +136,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               color: colors.surface1,
               borderRadius: AppRadius.borderRadiusLg,
               border: Border.all(color: colors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: TableCalendar<Color>(
               firstDay: DateTime.utc(2024, 1, 1),
@@ -237,29 +219,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   style: AppTypography.heading2
                       .copyWith(color: colors.textPrimary),
                 ),
-                GestureDetector(
-                  onTap: _showAddEventSheet,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.15),
-                      borderRadius: AppRadius.borderRadiusPill,
-                      border: Border.all(
-                          color: colors.primary.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(LucideIcons.plus,
-                            size: 14, color: colors.primary),
-                        const SizedBox(width: 4),
-                        Text('Add',
-                            style: AppTypography.caption
-                                .copyWith(color: colors.primary)),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -294,8 +253,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddEventSheet,
-        backgroundColor: colors.primary,
-        child: const Icon(LucideIcons.plus, color: Colors.white),
+        tooltip: 'Add to this day',
+        child: const Icon(LucideIcons.plus),
       ),
     );
   }
@@ -339,7 +298,7 @@ class _AgendaItem extends StatelessWidget {
                     style: AppTypography.body.copyWith(
                         color: colors.textPrimary,
                         fontWeight: FontWeight.w600)),
-                Text('${event.time ?? ''} · ${event.category}',
+                Text(event.time ?? 'Any time',
                     style: AppTypography.caption
                         .copyWith(color: colors.textSecondary)),
               ],
@@ -580,7 +539,7 @@ class _Label extends StatelessWidget {
   final AppColorsExtension colors;
   @override
   Widget build(BuildContext context) => Text(sentenceCase(text),
-      style: AppTypography.eyebrow.copyWith(color: colors.textSecondary));
+      style: AppTypography.label.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600));
 }
 
 class _Input extends StatelessWidget {

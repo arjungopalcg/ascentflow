@@ -8,7 +8,8 @@ import '../design/typography.dart';
 // APP CHIP — 5 semantic variants
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum ChipVariant { violet, mint, amber, danger, gray }
+/// `violet` is the primary (lake) accent; `summit` is alpenglow, for wins.
+enum ChipVariant { violet, summit, mint, amber, danger, gray }
 
 class AppChip extends StatelessWidget {
   const AppChip({
@@ -66,6 +67,8 @@ class AppChip extends StatelessWidget {
     switch (variant) {
       case ChipVariant.violet:
         return _ChipColors(bg: tint(c.primary), border: Colors.transparent, text: c.primary);
+      case ChipVariant.summit:
+        return _ChipColors(bg: tint(c.summit), border: Colors.transparent, text: c.summit);
       case ChipVariant.mint:
         return _ChipColors(bg: tint(c.mint), border: Colors.transparent, text: c.mint);
       case ChipVariant.amber:
@@ -90,7 +93,7 @@ class _ChipColors {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EYEBROW LABEL — Quiet sentence-case section header
+// SECTION HEADING — Condensed, sentence case
 // ─────────────────────────────────────────────────────────────────────────────
 
 class EyebrowLabel extends StatelessWidget {
@@ -105,7 +108,7 @@ class EyebrowLabel extends StatelessWidget {
     return Text(
       sentenceCase(text),
       style: AppTypography.eyebrow.copyWith(
-        color: color ?? colors.textSecondary,
+        color: color ?? colors.textPrimary,
       ),
     );
   }

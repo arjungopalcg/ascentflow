@@ -32,7 +32,7 @@ class ProfileScreen extends StatelessWidget {
         iconTheme: IconThemeData(color: colors.textPrimary),
         title: Text(
           'Profile',
-          style: AppTypography.heading3.copyWith(color: colors.textPrimary),
+          style: AppTypography.heading1.copyWith(color: colors.textPrimary),
         ),
       ),
       body: SingleChildScrollView(
@@ -65,9 +65,9 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       AppChip(
-                        label: 'Level 7 · Focused',
-                        variant: ChipVariant.violet,
-                        icon: LucideIcons.hexagon,
+                        label: 'Camp 7',
+                        variant: ChipVariant.summit,
+                        icon: LucideIcons.mountain,
                       ),
                     ],
                   ),
@@ -76,18 +76,26 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xxl),
 
-            // XP Progress Track
-            const EyebrowLabel('CURRENT PROGRESS'),
-            const SizedBox(height: AppSpacing.md),
+            // XP shown as altitude: every XP point is a metre climbed.
+            const EyebrowLabel('Altitude'),
+            const SizedBox(height: AppSpacing.xs),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '2,450',
-                  style: AppTypography.heading1.copyWith(color: colors.textPrimary),
+                  '2,450 m',
+                  style: AppTypography.displayXl.copyWith(
+                    color: colors.textPrimary,
+                    fontSize: 52,
+                  ),
                 ),
-                Text(
-                  ' / 3,000 XP',
-                  style: AppTypography.body.copyWith(color: colors.textSecondary),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Text(
+                    '550 m to Camp 8',
+                    style: AppTypography.label.copyWith(color: colors.textSecondary),
+                  ),
                 ),
               ],
             ),
@@ -96,10 +104,15 @@ class ProfileScreen extends StatelessWidget {
               borderRadius: AppRadius.borderRadiusPill,
               child: LinearProgressIndicator(
                 value: 2450 / 3000,
-                minHeight: 8,
+                minHeight: 6,
                 backgroundColor: colors.surface2,
-                valueColor: AlwaysStoppedAnimation(colors.primary),
+                valueColor: AlwaysStoppedAnimation(colors.summit),
               ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'You gain altitude by finishing tasks, focus sessions and journal entries.',
+              style: AppTypography.caption.copyWith(color: colors.textTertiary),
             ),
             const SizedBox(height: AppSpacing.xl),
 
@@ -145,8 +158,8 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
                 _MenuItemData(
-                  icon: LucideIcons.trophy, 
-                  label: 'Badges Gallery',
+                  icon: LucideIcons.mountainSnow,
+                  label: 'Summits',
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BadgesGalleryScreen())),
                 ),
                 _MenuItemData(

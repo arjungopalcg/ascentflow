@@ -25,9 +25,9 @@ const allHomeWidgets = [
   ),
   HomeWidgetModel(
     id: 'progress',
-    name: 'Today\'s Progress',
-    description: 'Summary of your tasks and focus time.',
-    icon: LucideIcons.barChart2,
+    name: 'Today\'s climb',
+    description: 'Your day drawn as a climb: how far you\'ve come and what\'s next.',
+    icon: LucideIcons.mountain,
   ),
   HomeWidgetModel(
     id: 'plan',
@@ -84,8 +84,8 @@ class HomeWidgetsState {
 class HomeWidgetsNotifier extends StateNotifier<HomeWidgetsState> {
   HomeWidgetsNotifier()
       : super(HomeWidgetsState(
-          enabledIds: ['challenge', 'progress', 'plan', 'motivation'],
-          order: ['challenge', 'progress', 'plan', 'savings', 'lists', 'reminders', 'motivation'],
+          enabledIds: ['progress', 'plan', 'challenge', 'motivation'],
+          order: ['progress', 'plan', 'challenge', 'savings', 'lists', 'reminders', 'motivation'],
         ));
 
   void toggleWidget(String id) {

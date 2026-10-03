@@ -25,7 +25,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        title: Text('Notifications', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Notifications', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

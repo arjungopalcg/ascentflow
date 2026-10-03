@@ -25,7 +25,7 @@ class _ThemeAppearanceScreenState extends ConsumerState<ThemeAppearanceScreen> {
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        title: Text('Theme & Appearance', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Theme & Appearance', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

@@ -12,48 +12,72 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // A calm, warm palette — paper and ink with one quiet green accent.
-  // Solid surfaces, no glows. Colour is reserved for meaning.
+  // "Alpine ascent" — the day as a climb. Cool snowfield and granite,
+  // lake-blue for action, and alpenglow reserved for wins.
 
-  // ── Dark Theme — "Evening" (warm charcoal, never blue-black) ─────────
-  static const Color darkBg = Color(0xFF191816);
-  static const Color darkSurface1 = Color(0xFF211F1C);
-  static const Color darkSurface2 = Color(0xFF2A2825);
-  static const Color darkSurface3 = Color(0xFF35322E);
-  static const Color darkSurface4 = Color(0xFF403C37);
+  // ── Dark Theme — "Night climb" (blue slate, never near-black) ───────
+  static const Color darkBg = Color(0xFF16212A);
+  static const Color darkSurface1 = Color(0xFF1D2A34);
+  static const Color darkSurface2 = Color(0xFF253540);
+  static const Color darkSurface3 = Color(0xFF30424E);
+  static const Color darkSurface4 = Color(0xFF3B4F5C);
 
-  static const Color darkTextPrimary = Color(0xFFEFEBE4);
-  static const Color darkTextSecondary = Color(0xFFADA79D);
-  static const Color darkTextTertiary = Color(0xFF7A746B);
-  static const Color darkBorder = Color(0xFF34312C);
+  static const Color darkTextPrimary = Color(0xFFE6EDF1);
+  static const Color darkTextSecondary = Color(0xFFA3B3BD);
+  static const Color darkTextTertiary = Color(0xFF718592);
+  static const Color darkBorder = Color(0xFF2C3C47);
 
-  // ── Light Theme — "Paper" ────────────────────────────────────────────
-  static const Color lightBg = Color(0xFFF5F2EC);
-  static const Color lightSurface1 = Color(0xFFFFFDF9);
-  static const Color lightSurface2 = Color(0xFFEFEBE3);
-  static const Color lightSurface3 = Color(0xFFE4DFD5);
+  // ── Light Theme — "Snowfield" ────────────────────────────────────────
+  static const Color lightBg = Color(0xFFEDF1F3);
+  static const Color lightSurface1 = Color(0xFFFAFCFD);
+  static const Color lightSurface2 = Color(0xFFE2E8EB);
+  static const Color lightSurface3 = Color(0xFFD3DCE1);
 
-  static const Color lightTextPrimary = Color(0xFF26231F);
-  static const Color lightTextSecondary = Color(0xFF68625A);
-  static const Color lightTextTertiary = Color(0xFF9C958A);
-  static const Color lightBorder = Color(0xFFE3DED4);
-  static const Color lightShadow = Color(0x0F26231F);
+  static const Color lightTextPrimary = Color(0xFF1E2A32);
+  static const Color lightTextSecondary = Color(0xFF52626C);
+  static const Color lightTextTertiary = Color(0xFF7F8F9A);
+  static const Color lightBorder = Color(0xFFD6DEE3);
+  static const Color lightShadow = Color(0x141E2A32);
 
-  // ── Accent — forest green ────────────────────────────────────────────
-  static const Color primaryDark = Color(0xFF8CC3A7);
-  static const Color primaryLight = Color(0xFF2F6B55);
+  // ── Lake — primary action ────────────────────────────────────────────
+  static const Color primaryDark = Color(0xFF7FB6CF);
+  static const Color primaryLight = Color(0xFF1F5F7A);
   // Kept for API compatibility; glows are intentionally switched off.
   static const Color primaryGlowDark = Color(0x00000000);
   static const Color primaryGlowLight = Color(0x00000000);
-  static const Color primaryLighter = Color(0xFFDCEBE2);
+  static const Color primaryLighter = Color(0xFFD5E6EE);
 
-  // ── Semantic colours (muted, earthy) ─────────────────────────────────
-  static const Color mint = Color(0xFF8FBF8F); // success — sage
-  static const Color mintLight = Color(0xFF4F7F55);
-  static const Color amber = Color(0xFFE0B061); // attention — ochre
-  static const Color amberLight = Color(0xFF9A6A1C);
-  static const Color danger = Color(0xFFE08A7A); // urgent — brick
-  static const Color dangerLight = Color(0xFFA9473A);
+  // ── Alpenglow — achievements only (XP, streaks, summits) ─────────────
+  static const Color summitDark = Color(0xFFF08A97);
+  static const Color summitLight = Color(0xFFD45568);
+
+  // ── Semantic ─────────────────────────────────────────────────────────
+  static const Color mint = Color(0xFF8DBB8C); // done — moss
+  static const Color mintLight = Color(0xFF4F7D52);
+  static const Color amber = Color(0xFFE2B062); // attention — larch
+  static const Color amberLight = Color(0xFFA06E16);
+  static const Color danger = Color(0xFFE58A80); // urgent — rust
+  static const Color dangerLight = Color(0xFFB4443C);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CATEGORY COLOURS — identity for calendar types, savings goals, goal rings.
+// One set for both themes. Validated with the dataviz skill's palette checker
+// (lightness band, chroma, colour-blind separation, contrast) against both the
+// Snowfield and Night-climb surfaces. Assign in this order; never generate more.
+// ═══════════════════════════════════════════════════════════════════════════
+
+class AppCategoryColors {
+  AppCategoryColors._();
+
+  static const Color lake = Color(0xFF3A82D0);
+  static const Color alpenglow = Color(0xFFDB6840);
+  static const Color glacier = Color(0xFF1FA48A);
+  static const Color larch = Color(0xFFBB850E);
+  static const Color gentian = Color(0xFF7A62D0);
+  static const Color rose = Color(0xFFC9558A);
+
+  static const List<Color> ordered = [lake, alpenglow, glacier, larch, gentian, rose];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -83,7 +107,7 @@ class AppRadius {
   static const double xs = 6;
   static const double sm = 10;
   static const double md = 14;
-  static const double lg = 20;
+  static const double lg = 22;
   static const double pill = 999;
 
   static const BorderRadius borderRadiusXs = BorderRadius.all(Radius.circular(xs));

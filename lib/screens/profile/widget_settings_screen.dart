@@ -26,7 +26,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
         iconTheme: IconThemeData(color: colors.textPrimary),
         title: Text(
           'Widget Settings',
-          style: AppTypography.heading3.copyWith(color: colors.textPrimary),
+          style: AppTypography.heading1.copyWith(color: colors.textPrimary),
         ),
       ),
       body: Column(

@@ -67,6 +67,29 @@ class SolidCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PLAIN SECTION — Content set directly on the page, divided by a hairline.
+// Use for read-mostly groups so not everything becomes a card.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class PlainSection extends StatelessWidget {
+  const PlainSection({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: context.colors.border)),
+      ),
+      child: child,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TIER 2 — ELEVATED CARD
 // A touch more presence than a surface card. For menus, featured content.
 // ─────────────────────────────────────────────────────────────────────────────

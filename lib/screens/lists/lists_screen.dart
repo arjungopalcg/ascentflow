@@ -25,11 +25,11 @@ const _iconOptions = [
 ];
 
 const _mockFriends = [
-  {'name': 'Sarah J.', 'initial': 'S', 'color': Color(0xFFC98A3D)},
-  {'name': 'Mike R.', 'initial': 'M', 'color': Color(0xFF5B7FA8)},
-  {'name': 'Emma W.', 'initial': 'E', 'color': Color(0xFF4E8F8B)},
-  {'name': 'David L.', 'initial': 'D', 'color': Color(0xFF8C6A9E)},
-  {'name': 'Chloe K.', 'initial': 'C', 'color': Color(0xFF6A9A73)},
+  {'name': 'Sarah J.', 'initial': 'S', 'color': Color(0xFFBB850E)},
+  {'name': 'Mike R.', 'initial': 'M', 'color': Color(0xFF3A82D0)},
+  {'name': 'Emma W.', 'initial': 'E', 'color': Color(0xFF1FA48A)},
+  {'name': 'David L.', 'initial': 'D', 'color': Color(0xFF7A62D0)},
+  {'name': 'Chloe K.', 'initial': 'C', 'color': Color(0xFFDB6840)},
 ];
 
 class ListsScreen extends ConsumerStatefulWidget {
@@ -92,7 +92,7 @@ class _ListsScreenState extends ConsumerState<ListsScreen> {
       backgroundColor: colors.background,
       appBar: AppBar(
         title: Text('My Lists',
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
@@ -324,7 +324,7 @@ class _ListDetailScreenState extends ConsumerState<_ListDetailScreen> {
       backgroundColor: colors.background,
       appBar: AppBar(
         title: Text(widget.list.title,
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
@@ -473,7 +473,7 @@ class _ShareListSheet extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text('Invite friends to collaborate on "${list.title}"', style: AppTypography.body.copyWith(color: colors.textSecondary)),
           const SizedBox(height: AppSpacing.xl),
-          Text('Friends', style: AppTypography.eyebrow.copyWith(color: colors.textSecondary)),
+          Text('Friends', style: AppTypography.label.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.md),
           ..._mockFriends.map((f) {
             final isAdded = list.members.contains(f['initial']);
@@ -625,7 +625,7 @@ class _CreateListSheetState extends State<_CreateListSheet> {
           const SizedBox(height: AppSpacing.lg),
 
           Text('List name',
-              style: AppTypography.eyebrow.copyWith(color: colors.textSecondary)),
+              style: AppTypography.label.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.xs),
           Container(
             padding: const EdgeInsets.symmetric(
@@ -651,7 +651,7 @@ class _CreateListSheetState extends State<_CreateListSheet> {
           const SizedBox(height: AppSpacing.lg),
 
           Text('Choose an icon',
-              style: AppTypography.eyebrow.copyWith(color: colors.textSecondary)),
+              style: AppTypography.label.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,

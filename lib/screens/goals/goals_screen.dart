@@ -53,7 +53,7 @@ class _GoalsScreenState extends State<GoalsScreen> with SingleTickerProviderStat
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text('Goals', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Goals', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
@@ -164,7 +164,7 @@ class _GoalCard extends StatelessWidget {
     
     final deadlineText = goal.deadline != null 
         ? '${goal.deadline!.day}/${goal.deadline!.month}/${goal.deadline!.year}'
-        : 'No Deadline';
+        : 'No deadline';
     
     return SolidCard(
       child: Column(
@@ -200,7 +200,7 @@ class _GoalCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${goal.progress.toInt()}${goal.unit} / ${goal.target.toInt()}${goal.unit}',
+                '${_fmt(goal.progress)}${goal.unit} / ${_fmt(goal.target)}${goal.unit}',
                 style: AppTypography.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
               ),
               Text(
@@ -569,7 +569,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
                                 targetType: targetTypeMapped,
                                 deadline: _targetDate,
                                 icon: LucideIcons.target,
-                                progressColor: const Color(0xFF6A9A73), // Sage
+                                progressColor: const Color(0xFFDB6840), // Alpenglow orange
                                 target: double.tryParse(_targetValueController.text) ?? 1.0,
                                 unit: _unitController.text,
                               );
@@ -593,3 +593,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
     );
   }
 }
+
+/// 2.5 → "2.5", 5.0 → "5" — keeps real progress like half a kilometre.
+String _fmt(double v) =>
+    v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);

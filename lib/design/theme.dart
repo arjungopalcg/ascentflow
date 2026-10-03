@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'tokens.dart';
+import 'typography.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ASCENT FLOW — THEME EXTENSION
-// Dual-theme system: Light ("Paper") + Dark ("Evening")
+// Dual-theme system: Light ("Snowfield") + Dark ("Night climb")
 // Resolve via: Theme.of(context).extension<AppColorsExtension>()!
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     required this.primary,
     required this.primaryGlow,
     required this.primaryLighter,
+    required this.summit,
     required this.mint,
     required this.amber,
     required this.danger,
@@ -37,6 +39,9 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   final Color primary;
   final Color primaryGlow;
   final Color primaryLighter;
+
+  /// Alpenglow — reserved for achievements (XP, streaks, summits).
+  final Color summit;
   final Color mint;
   final Color amber;
   final Color danger;
@@ -57,6 +62,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     primary: AppColors.primaryDark,
     primaryGlow: AppColors.primaryGlowDark,
     primaryLighter: AppColors.primaryLighter,
+    summit: AppColors.summitDark,
     mint: AppColors.mint,
     amber: AppColors.amber,
     danger: AppColors.danger,
@@ -78,6 +84,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     primary: AppColors.primaryLight,
     primaryGlow: AppColors.primaryGlowLight,
     primaryLighter: AppColors.primaryLighter,
+    summit: AppColors.summitLight,
     mint: AppColors.mintLight,
     amber: AppColors.amberLight,
     danger: AppColors.dangerLight,
@@ -105,6 +112,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     Color? primary,
     Color? primaryGlow,
     Color? primaryLighter,
+    Color? summit,
     Color? mint,
     Color? amber,
     Color? danger,
@@ -124,6 +132,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       primary: primary ?? this.primary,
       primaryGlow: primaryGlow ?? this.primaryGlow,
       primaryLighter: primaryLighter ?? this.primaryLighter,
+      summit: summit ?? this.summit,
       mint: mint ?? this.mint,
       amber: amber ?? this.amber,
       danger: danger ?? this.danger,
@@ -151,6 +160,7 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       primary: Color.lerp(primary, other.primary, t)!,
       primaryGlow: Color.lerp(primaryGlow, other.primaryGlow, t)!,
       primaryLighter: Color.lerp(primaryLighter, other.primaryLighter, t)!,
+      summit: Color.lerp(summit, other.summit, t)!,
       mint: Color.lerp(mint, other.mint, t)!,
       amber: Color.lerp(amber, other.amber, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
@@ -177,7 +187,7 @@ ThemeData _buildTheme(AppColorsExtension c) {
   final brightness = c.isDark ? Brightness.dark : Brightness.light;
   final onPrimary = c.isDark ? AppColors.darkBg : Colors.white;
   final base = ThemeData(brightness: brightness, useMaterial3: true);
-  final textTheme = GoogleFonts.figtreeTextTheme(base.textTheme).apply(
+  final textTheme = GoogleFonts.barlowTextTheme(base.textTheme).apply(
     bodyColor: c.textPrimary,
     displayColor: c.textPrimary,
   );
@@ -206,6 +216,7 @@ ThemeData _buildTheme(AppColorsExtension c) {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
+      titleTextStyle: AppTypography.heading1.copyWith(color: c.textPrimary),
     ),
     cardTheme: CardThemeData(
       color: c.surface1,
@@ -245,6 +256,12 @@ ThemeData _buildTheme(AppColorsExtension c) {
       trackOutlineColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected) ? c.primary : c.border,
       ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: c.primary,
+      foregroundColor: onPrimary,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.borderRadiusLg),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(
       color: c.primary,

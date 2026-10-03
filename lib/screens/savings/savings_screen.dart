@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -60,21 +61,21 @@ class _SavingsScreenState extends State<SavingsScreen> {
       title: 'Emergency Fund',
       current: 2500,
       target: 5000,
-      color: const Color(0xFF8C6A9E),
+      color: const Color(0xFF7A62D0),
     ),
     SavingsGoal(
       id: 's2',
       title: 'Vacation',
       current: 800,
       target: 2000,
-      color: const Color(0xFF4E8F8B),
+      color: const Color(0xFF1FA48A),
     ),
     SavingsGoal(
       id: 's3',
       title: 'New Laptop',
       current: 1500,
       target: 2400,
-      color: const Color(0xFFC98A3D),
+      color: const Color(0xFFBB850E),
     ),
   ];
 
@@ -119,18 +120,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text('Savings Goals',
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Savings',
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        actions: [
-          IconButton(
-            onPressed: _showCreateGoalSheet,
-            icon: Icon(LucideIcons.plus, color: colors.primary),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -153,15 +147,15 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Total Savings',
+                        Text('Saved so far',
                             style: AppTypography.caption
                                 .copyWith(color: colors.textSecondary)),
                         Text(
-                          '\$${totalCurrent.toInt()}',
+                          _money.format(totalCurrent),
                           style: AppTypography.display.copyWith(
                               color: colors.textPrimary, fontSize: 32),
                         ),
-                        Text('of \$${totalTarget.toInt()}',
+                        Text('of ${_money.format(totalTarget)}',
                             style: AppTypography.body
                                 .copyWith(color: colors.textTertiary)),
                       ],
@@ -177,13 +171,13 @@ class _SavingsScreenState extends State<SavingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Your Goals',
+              Text('Your goals',
                   style: AppTypography.heading2
                       .copyWith(color: colors.textPrimary)),
               TextButton.icon(
                 onPressed: _showCreateGoalSheet,
                 icon: Icon(LucideIcons.plus, size: 14, color: colors.primary),
-                label: Text('New Goal',
+                label: Text('New goal',
                     style: AppTypography.label.copyWith(color: colors.primary)),
               ),
             ],
@@ -217,7 +211,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
           // ── Add Contribution ─────────────────────────────────────
           if (_goals.isNotEmpty)
             PillButton(
-              label: 'Add Contribution',
+              label: 'Add money to a goal',
               onTap: _showAddContributionSheet,
             ),
           const SizedBox(height: AppSpacing.md),
@@ -311,10 +305,10 @@ class _SavingsGoalCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('$sym${goal.current.toInt()} saved',
+              Text('$sym${_grouped.format(goal.current)} saved',
                   style: AppTypography.caption.copyWith(
                       color: colors.textPrimary, fontWeight: FontWeight.bold)),
-              Text('$sym${(goal.target - goal.current).toInt()} to go',
+              Text('$sym${_grouped.format(goal.target - goal.current)} to go',
                   style: AppTypography.caption
                       .copyWith(color: colors.textTertiary)),
             ],
@@ -345,12 +339,12 @@ class _CreateGoalSheetState extends State<_CreateGoalSheet> {
   String _selectedSymbol = '\$';
 
   final _colors = [
-    const Color(0xFF8C6A9E),
-    const Color(0xFF4E8F8B),
-    const Color(0xFFC98A3D),
-    const Color(0xFFC4675A),
-    const Color(0xFF6A9A73),
-    const Color(0xFF5B7FA8),
+    const Color(0xFF7A62D0),
+    const Color(0xFF1FA48A),
+    const Color(0xFFBB850E),
+    const Color(0xFFC9558A),
+    const Color(0xFFDB6840),
+    const Color(0xFF3A82D0),
   ];
   int _colorIndex = 0;
 
@@ -761,7 +755,7 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(sentenceCase(text),
-        style: AppTypography.eyebrow.copyWith(color: colors.textSecondary));
+        style: AppTypography.label.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600));
   }
 }
 
@@ -806,3 +800,6 @@ class _Input extends StatelessWidget {
     );
   }
 }
+
+final _money = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
+final _grouped = NumberFormat.decimalPattern()..maximumFractionDigits = 0;

@@ -8,6 +8,7 @@ import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
 import '../../widgets/cards.dart';
+import '../../widgets/climb_panel.dart';
 import '../../widgets/common.dart';
 
 import '../../models/goal_model.dart';
@@ -34,7 +35,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _staggerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..forward();
+      // Sections appear immediately; the climb panel owns the one entrance
+      // animation on this screen.
+      value: 1,
+    );
   }
 
   @override
@@ -299,10 +303,10 @@ class _DailyChallengeCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
+              color: colors.summit.withValues(alpha: colors.isDark ? 0.18 : 0.12),
               borderRadius: AppRadius.borderRadiusSm,
             ),
-            child: Icon(LucideIcons.flag, color: colors.primary, size: 20),
+            child: Icon(LucideIcons.flag, color: colors.summit, size: 20),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -320,7 +324,7 @@ class _DailyChallengeCard extends StatelessWidget {
               ],
             ),
           ),
-          AppChip(label: '+30 XP', variant: ChipVariant.mint),
+          AppChip(label: '+30 XP', variant: ChipVariant.summit),
         ],
       ),
     );
@@ -341,105 +345,17 @@ class _TodayProgressCard extends ConsumerWidget {
     final goals = ref.watch(goalsProvider);
     final tasksDone = tasks.where((t) => t.isCompleted).length;
     final goalsDone = goals.where((g) => g.progress >= g.target).length;
-    final total = tasks.length + goals.length;
-    final done = tasksDone + goalsDone;
+    final nextGoal = goals.where((g) => g.progress < g.target).firstOrNull;
+    final nextTask = tasks.where((t) => !t.isCompleted).firstOrNull;
 
-    return SolidCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(child: EyebrowLabel('Today so far')),
-              Text(
-                total == 0 ? 'Nothing planned yet' : '$done of $total done',
-                style: AppTypography.caption.copyWith(color: colors.textTertiary),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: AppRadius.borderRadiusPill,
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : done / total,
-              minHeight: 6,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatBox(
-                    value: tasksDone.toDouble(),
-                    label: 'Tasks done',
-                    suffix: ' / ${tasks.length}',
-                    colors: colors,
-                  ),
-                ),
-                VerticalDivider(color: colors.border, width: AppSpacing.xl),
-                Expanded(
-                  child: _StatBox(
-                    value: goalsDone.toDouble(),
-                    label: 'Goals met',
-                    suffix: ' / ${goals.length}',
-                    colors: colors,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return ClimbPanel(
+      done: tasksDone + goalsDone,
+      total: tasks.length + goals.length,
+      nextUp: nextGoal?.title ?? nextTask?.title,
     );
   }
 }
 
-class _StatBox extends StatelessWidget {
-  const _StatBox({
-    required this.value,
-    required this.label,
-    required this.suffix,
-    required this.colors,
-  });
-
-  final double value;
-  final String label;
-  final String suffix;
-  final AppColorsExtension colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            CountUpText(
-              value: value,
-              style: AppTypography.display.copyWith(
-                color: colors.textPrimary,
-                fontSize: 28,
-              ),
-            ),
-            if (suffix.isNotEmpty)
-              Text(
-                suffix,
-                style: AppTypography.label.copyWith(color: colors.textTertiary),
-              ),
-          ],
-        ),
-        Text(
-          label,
-          style: AppTypography.caption.copyWith(color: colors.textSecondary),
-        ),
-      ],
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // NEW WIDGETS: MY LISTS & TASK REMINDERS
@@ -454,7 +370,7 @@ class _MyListsWidget extends ConsumerWidget {
     final lists = ref.watch(listsProvider);
     final displayLists = lists.take(3).toList();
 
-    return SolidCard(
+    return PlainSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -511,7 +427,7 @@ class _TaskReminderWidget extends ConsumerWidget {
       return [1, 3, 5, 10].contains(diff);
     }).toList();
 
-    return SolidCard(
+    return PlainSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -594,7 +510,7 @@ class _TodayPlanCard extends ConsumerWidget {
       ...dailyGoals.map((g) => _PlanItem(g.id, g.title, true, g.progress >= g.target)),
       ...todayTasks.map((t) => _PlanItem(t.id, t.title, false, t.isCompleted)),
     ];
-    return SolidCard(
+    return PlainSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -692,7 +608,7 @@ class _MotivationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SolidCard(
+    return PlainSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -731,7 +647,7 @@ class _SavingsSummaryCard extends ConsumerWidget {
     final goals = ref.watch(goalsProvider);
     final savingsGoals = goals.where((g) => g.targetType == GoalTargetType.numeric).take(2).toList();
 
-    return SolidCard(
+    return PlainSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

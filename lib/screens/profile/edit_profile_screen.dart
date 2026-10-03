@@ -18,7 +18,7 @@ class EditProfileScreen extends StatelessWidget {
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        title: Text('Edit Profile', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Edit Profile', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),

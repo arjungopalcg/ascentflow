@@ -64,14 +64,19 @@ class _MoreScreenState extends State<MoreScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'More',
-                  style: AppTypography.display.copyWith(
-                    color: colors.textPrimary,
+                Flexible(
+                  child: Text(
+                    'More',
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.display.copyWith(
+                      color: colors.textPrimary,
+                    ),
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
                 // Profile pill
-                GestureDetector(
+                Flexible(
+                  child: GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
                     Navigator.push(
@@ -90,6 +95,7 @@ class _MoreScreenState extends State<MoreScreen>
                       border: Border.all(color: colors.border),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 28,
@@ -101,10 +107,13 @@ class _MoreScreenState extends State<MoreScreen>
                           child: Icon(LucideIcons.user, size: 14, color: colors.primary),
                         ),
                         const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          'Alex',
-                          style: AppTypography.label.copyWith(
-                            color: colors.textPrimary,
+                        Flexible(
+                          child: Text(
+                            'Alex',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.label.copyWith(
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                         const SizedBox(width: AppSpacing.xxs),
@@ -112,6 +121,7 @@ class _MoreScreenState extends State<MoreScreen>
                       ],
                     ),
                   ),
+                ),
                 ),
               ],
             ),

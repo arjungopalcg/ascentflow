@@ -17,52 +17,74 @@ class BadgesGalleryScreen extends StatelessWidget {
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        title: Text('Badges Gallery', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Summits', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: AppSpacing.md,
-          mainAxisSpacing: AppSpacing.lg,
-          childAspectRatio: 0.8,
+      body: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xxl,
         ),
-        itemCount: 9, // Example count
+        itemCount: _summits.length,
+        separatorBuilder: (_, _) => Divider(color: colors.border),
         itemBuilder: (context, index) {
-          final isUnlocked = index < 4;
-          return Column(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isUnlocked ? colors.primary.withValues(alpha: 0.15) : colors.surface2,
-                  border: Border.all(
-                    color: isUnlocked ? colors.primary : colors.surface3,
-                    width: isUnlocked ? 2 : 1,
+          final (name, how, reached) = _summits[index];
+          final tone = reached ? colors.summit : colors.textTertiary;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: reached
+                        ? colors.summit.withValues(alpha: colors.isDark ? 0.18 : 0.12)
+                        : colors.surface2,
+                    borderRadius: AppRadius.borderRadiusSm,
                   ),
-                ),
-                child: Center(
                   child: Icon(
-                    isUnlocked ? LucideIcons.award : LucideIcons.lock,
-                    size: 28,
-                    color: isUnlocked ? colors.primary : colors.textTertiary,
+                    reached ? LucideIcons.mountainSnow : LucideIcons.mountain,
+                    size: 22,
+                    color: tone,
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Badge ${index + 1}',
-                style: AppTypography.caption.copyWith(
-                  color: isUnlocked ? colors.textPrimary : colors.textTertiary,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: AppTypography.heading2.copyWith(
+                          color: reached ? colors.textPrimary : colors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        how,
+                        style: AppTypography.caption.copyWith(color: colors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                if (reached)
+                  Icon(LucideIcons.check, size: 18, color: colors.summit),
+              ],
+            ),
           );
         },
       ),
     );
   }
 }
+
+/// Name, how to reach it, and whether it's been reached.
+const _summits = [
+  ('First steps', 'Finish your first task', true),
+  ('Base camp', 'Plan out a whole day', true),
+  ('Clear head', 'Complete a 25-minute focus session', true),
+  ('A week on the trail', 'Show up seven days in a row', true),
+  ('Steady pace', 'Write 30 journal entries', false),
+  ('Deep focus', 'Focus for 10 hours in one week', false),
+  ('Saver\'s ridge', 'Reach one of your savings goals', false),
+  ('High camp', 'Reach Camp 10', false),
+  ('The summit', 'Show up 100 days in a row', false),
+];

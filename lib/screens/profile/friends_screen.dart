@@ -17,7 +17,7 @@ class FriendsScreen extends StatelessWidget {
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        title: Text('Friends', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Friends', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         actions: [
           IconButton(
             icon: Icon(LucideIcons.userPlus, color: colors.primary),

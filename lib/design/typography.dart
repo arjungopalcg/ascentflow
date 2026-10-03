@@ -3,85 +3,91 @@ import 'package:google_fonts/google_fonts.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ASCENT FLOW — TYPOGRAPHY
-// Two typefaces: Fraunces (headings — a soft, warm serif, like a good
-// notebook) + Figtree (body/UI — friendly and very legible at small sizes).
-// Weights stay moderate; nothing shouts.
+// One family in two widths, borrowed from trail and highway signage:
+// Barlow Condensed for headings and numbers (time, altitude, counts) and
+// Barlow for reading. Numbers use tabular figures so they don't jitter.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppTypography {
   AppTypography._();
 
-  // ── Fraunces — Display & Headings ────────────────────────────────────
+  static const _tabular = [FontFeature.tabularFigures()];
 
-  static TextStyle get displayXl => GoogleFonts.fraunces(
-        fontSize: 44,
+  // ── Barlow Condensed — Display & Headings ────────────────────────────
+
+  static TextStyle get displayXl => GoogleFonts.barlowCondensed(
+        fontSize: 64,
         fontWeight: FontWeight.w500,
+        height: 1.0,
+        fontFeatures: _tabular,
+      );
+
+  static TextStyle get display => GoogleFonts.barlowCondensed(
+        fontSize: 36,
+        fontWeight: FontWeight.w600,
         height: 1.1,
-        letterSpacing: -0.5,
       );
 
-  static TextStyle get display => GoogleFonts.fraunces(
-        fontSize: 30,
-        fontWeight: FontWeight.w500,
+  static TextStyle get heading1 => GoogleFonts.barlowCondensed(
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        height: 1.15,
+      );
+
+  static TextStyle get heading2 => GoogleFonts.barlowCondensed(
+        fontSize: 21,
+        fontWeight: FontWeight.w600,
         height: 1.2,
-        letterSpacing: -0.3,
       );
 
-  static TextStyle get heading1 => GoogleFonts.fraunces(
-        fontSize: 24,
-        fontWeight: FontWeight.w500,
-        height: 1.25,
-      );
-
-  static TextStyle get heading2 => GoogleFonts.fraunces(
-        fontSize: 20,
-        fontWeight: FontWeight.w500,
+  static TextStyle get heading3 => GoogleFonts.barlow(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
         height: 1.3,
       );
 
-  static TextStyle get heading3 => GoogleFonts.figtree(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-        height: 1.35,
+  // ── Barlow — Body & UI ───────────────────────────────────────────────
+
+  static TextStyle get bodyLarge => GoogleFonts.barlow(
+        fontSize: 16.5,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
       );
 
-  // ── Figtree — Body & UI ──────────────────────────────────────────────
-
-  static TextStyle get bodyLarge => GoogleFonts.figtree(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
+  static TextStyle get body => GoogleFonts.barlow(
+        fontSize: 15.5,
+        fontWeight: FontWeight.w400,
         height: 1.45,
       );
 
-  static TextStyle get body => GoogleFonts.figtree(
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
-        height: 1.5,
-      );
-
-  static TextStyle get label => GoogleFonts.figtree(
-        fontSize: 14,
+  static TextStyle get label => GoogleFonts.barlow(
+        fontSize: 14.5,
         fontWeight: FontWeight.w500,
-        height: 1.4,
+        height: 1.35,
       );
 
-  static TextStyle get caption => GoogleFonts.figtree(
-        fontSize: 12.5,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      );
-
-  /// Quiet section header in sentence case ("Today's plan").
-  static TextStyle get eyebrow => GoogleFonts.figtree(
+  static TextStyle get caption => GoogleFonts.barlow(
         fontSize: 13,
+        fontWeight: FontWeight.w400,
+        height: 1.35,
+      );
+
+  /// Section heading inside a screen ("Today's plan") — condensed, sentence
+  /// case, sized to read as a heading rather than a tag above one.
+  static TextStyle get eyebrow => GoogleFonts.barlowCondensed(
+        fontSize: 19,
         fontWeight: FontWeight.w600,
-        height: 1.4,
+        height: 1.2,
       );
 }
 
-/// "TODAY'S PROGRESS" → "Today's progress". Leaves mixed-case text alone.
+const _acronyms = {'ai': 'AI', 'xp': 'XP', 'faq': 'FAQ', 'faqs': 'FAQs'};
+
+/// "TODAY'S PROGRESS" → "Today's progress"; "AI INSIGHTS" → "AI insights".
+/// Leaves mixed-case text alone.
 String sentenceCase(String text) {
   if (text.isEmpty || text != text.toUpperCase()) return text;
-  final lower = text.toLowerCase();
+  final words = text.toLowerCase().split(' ').map((w) => _acronyms[w] ?? w);
+  final lower = words.join(' ');
   return lower[0].toUpperCase() + lower.substring(1);
 }

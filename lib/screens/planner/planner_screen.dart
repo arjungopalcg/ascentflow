@@ -134,15 +134,11 @@ class _PlannerScreenState extends State<PlannerScreen>
       backgroundColor: colors.background,
       appBar: AppBar(
         title: Text('Daily Planner',
-            style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+            style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
         actions: [
-          IconButton(
-            onPressed: () => _showAddPlanModal(),
-            icon: Icon(LucideIcons.plus, color: colors.primary),
-          ),
           const SizedBox(width: AppSpacing.sm),
         ],
         bottom: TabBar(
@@ -236,10 +232,8 @@ class _TodayView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.15),
+                    color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
                     borderRadius: AppRadius.borderRadiusPill,
-                    border:
-                        Border.all(color: colors.primary.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
@@ -385,10 +379,8 @@ class _ScheduleViewState extends State<_ScheduleView> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.15),
+                    color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
                     borderRadius: AppRadius.borderRadiusPill,
-                    border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
@@ -800,7 +792,7 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(sentenceCase(text),
-        style: AppTypography.eyebrow.copyWith(color: colors.textSecondary));
+        style: AppTypography.label.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600));
   }
 }
 

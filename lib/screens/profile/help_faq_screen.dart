@@ -16,7 +16,7 @@ class HelpFaqScreen extends StatelessWidget {
         backgroundColor: colors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        title: Text('Help & FAQs', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+        title: Text('Help & FAQs', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
