@@ -45,11 +45,9 @@ class AppChip extends StatelessWidget {
           ],
           Text(
             label,
-            style: AppTypography.eyebrow.copyWith(
+            style: AppTypography.caption.copyWith(
               color: chipColors.text,
-              fontSize: 11,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -63,57 +61,19 @@ class AppChip extends StatelessWidget {
   }
 
   _ChipColors _resolveColors(AppColorsExtension c) {
+    // Soft tinted fill, no outline — colour carries meaning, not decoration.
+    Color tint(Color base) => base.withValues(alpha: c.isDark ? 0.16 : 0.12);
     switch (variant) {
       case ChipVariant.violet:
-        return _ChipColors(
-          bg: c.isDark
-              ? const Color(0x337C5CE4)
-              : const Color(0x1A6B4ED9),
-          border: c.isDark
-              ? const Color(0x4D7C5CE4)
-              : const Color(0x336B4ED9),
-          text: AppColors.primaryLighter,
-        );
+        return _ChipColors(bg: tint(c.primary), border: Colors.transparent, text: c.primary);
       case ChipVariant.mint:
-        return _ChipColors(
-          bg: c.isDark
-              ? const Color(0x2600C9A7)
-              : const Color(0x1A00A88B),
-          border: c.isDark
-              ? const Color(0x4000C9A7)
-              : const Color(0x3300A88B),
-          text: AppColors.mint,
-        );
+        return _ChipColors(bg: tint(c.mint), border: Colors.transparent, text: c.mint);
       case ChipVariant.amber:
-        return _ChipColors(
-          bg: c.isDark
-              ? const Color(0x26F59E0B)
-              : const Color(0x1AD97706),
-          border: c.isDark
-              ? const Color(0x40F59E0B)
-              : const Color(0x33D97706),
-          text: AppColors.amber,
-        );
+        return _ChipColors(bg: tint(c.amber), border: Colors.transparent, text: c.amber);
       case ChipVariant.danger:
-        return _ChipColors(
-          bg: c.isDark
-              ? const Color(0x26EF4444)
-              : const Color(0x1ADC2626),
-          border: c.isDark
-              ? const Color(0x40EF4444)
-              : const Color(0x33DC2626),
-          text: AppColors.danger,
-        );
+        return _ChipColors(bg: tint(c.danger), border: Colors.transparent, text: c.danger);
       case ChipVariant.gray:
-        return _ChipColors(
-          bg: c.isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.05),
-          border: c.isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.black.withValues(alpha: 0.1),
-          text: c.textSecondary,
-        );
+        return _ChipColors(bg: c.surface2, border: Colors.transparent, text: c.textSecondary);
     }
   }
 }
@@ -130,7 +90,7 @@ class _ChipColors {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EYEBROW LABEL — Tracked-caps section header
+// EYEBROW LABEL — Quiet sentence-case section header
 // ─────────────────────────────────────────────────────────────────────────────
 
 class EyebrowLabel extends StatelessWidget {
@@ -143,7 +103,7 @@ class EyebrowLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Text(
-      text.toUpperCase(),
+      sentenceCase(text),
       style: AppTypography.eyebrow.copyWith(
         color: color ?? colors.textSecondary,
       ),

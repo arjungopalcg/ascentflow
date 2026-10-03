@@ -25,11 +25,11 @@ const _iconOptions = [
 ];
 
 const _mockFriends = [
-  {'name': 'Sarah J.', 'initial': 'S', 'color': Color(0xFFFFB053)},
-  {'name': 'Mike R.', 'initial': 'M', 'color': Color(0xFF4D9FF4)},
-  {'name': 'Emma W.', 'initial': 'E', 'color': Color(0xFF10F1D3)},
-  {'name': 'David L.', 'initial': 'D', 'color': Color(0xFF9E77F1)},
-  {'name': 'Chloe K.', 'initial': 'C', 'color': Color(0xFF63C2A5)},
+  {'name': 'Sarah J.', 'initial': 'S', 'color': Color(0xFFC98A3D)},
+  {'name': 'Mike R.', 'initial': 'M', 'color': Color(0xFF5B7FA8)},
+  {'name': 'Emma W.', 'initial': 'E', 'color': Color(0xFF4E8F8B)},
+  {'name': 'David L.', 'initial': 'D', 'color': Color(0xFF8C6A9E)},
+  {'name': 'Chloe K.', 'initial': 'C', 'color': Color(0xFF6A9A73)},
 ];
 
 class ListsScreen extends ConsumerStatefulWidget {
@@ -473,7 +473,7 @@ class _ShareListSheet extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text('Invite friends to collaborate on "${list.title}"', style: AppTypography.body.copyWith(color: colors.textSecondary)),
           const SizedBox(height: AppSpacing.xl),
-          Text('FRIENDS', style: AppTypography.caption.copyWith(color: colors.textTertiary, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          Text('Friends', style: AppTypography.eyebrow.copyWith(color: colors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
           ..._mockFriends.map((f) {
             final isAdded = list.members.contains(f['initial']);
@@ -624,11 +624,8 @@ class _CreateListSheetState extends State<_CreateListSheet> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          Text('LIST NAME',
-              style: AppTypography.caption.copyWith(
-                  color: colors.textTertiary,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8)),
+          Text('List name',
+              style: AppTypography.eyebrow.copyWith(color: colors.textSecondary)),
           const SizedBox(height: AppSpacing.xs),
           Container(
             padding: const EdgeInsets.symmetric(
@@ -653,11 +650,8 @@ class _CreateListSheetState extends State<_CreateListSheet> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          Text('CHOOSE ICON',
-              style: AppTypography.caption.copyWith(
-                  color: colors.textTertiary,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8)),
+          Text('Choose an icon',
+              style: AppTypography.eyebrow.copyWith(color: colors.textSecondary)),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -93,11 +92,11 @@ class _NavPillBarState extends State<_NavPillBar>
     with SingleTickerProviderStateMixin {
   
   static const _items = [
-    _NavItem(icon: LucideIcons.home, activeIcon: LucideIcons.home, label: 'HOME'),
-    _NavItem(icon: LucideIcons.checkSquare, activeIcon: LucideIcons.checkSquare, label: 'TASKS'),
-    _NavItem(icon: LucideIcons.timer, activeIcon: LucideIcons.timer, label: 'FOCUS'),
-    _NavItem(icon: LucideIcons.bookOpen, activeIcon: LucideIcons.bookOpen, label: 'JOURNAL'),
-    _NavItem(icon: LucideIcons.layoutGrid, activeIcon: LucideIcons.layoutGrid, label: 'MORE'),
+    _NavItem(icon: LucideIcons.home, label: 'Today'),
+    _NavItem(icon: LucideIcons.checkSquare, label: 'Tasks'),
+    _NavItem(icon: LucideIcons.timer, label: 'Focus'),
+    _NavItem(icon: LucideIcons.bookOpen, label: 'Journal'),
+    _NavItem(icon: LucideIcons.layoutGrid, label: 'More'),
   ];
 
   @override
@@ -105,49 +104,39 @@ class _NavPillBarState extends State<_NavPillBar>
     final colors = context.colors;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: colors.isDark ? 24 : 20,
-          sigmaY: colors.isDark ? 24 : 20,
-        ),
-        child: Container(
-          height: 80 + bottomPadding,
-          padding: EdgeInsets.only(
-            bottom: bottomPadding,
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            color: colors.isDark
-                ? const Color(0xE00A0A12) 
-                : const Color(0xEBFFFFFF), 
-            // Removed the top border to eliminate the white line
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(_items.length, (i) {
-              final isActive = i == widget.currentIndex;
-              return _AnimNavTabButton(
-                item: _items[i],
-                isActive: isActive,
-                onTap: () => widget.onTap(i),
-                colors: colors,
-              );
-            }),
-          ),
-        ),
+    return Container(
+      padding: EdgeInsets.only(
+        top: AppSpacing.xs,
+        bottom: bottomPadding + AppSpacing.xs,
+        left: AppSpacing.xs,
+        right: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface1,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: Row(
+        children: List.generate(_items.length, (i) {
+          return Expanded(
+            child: _NavTabButton(
+              item: _items[i],
+              isActive: i == widget.currentIndex,
+              onTap: () => widget.onTap(i),
+              colors: colors,
+            ),
+          );
+        }),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NAV TAB BUTTON — Bouncy minimal slide animation
+// NAV TAB BUTTON — Every tab is labelled; the active one sits on a soft pill.
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _AnimNavTabButton extends StatelessWidget {
-  const _AnimNavTabButton({
+class _NavTabButton extends StatelessWidget {
+  const _NavTabButton({
     required this.item,
     required this.isActive,
     required this.onTap,
@@ -161,78 +150,50 @@ class _AnimNavTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        width: 64, // Fixed touch target width per tab
-        height: 70, // Explicit height for correct Stack positioning
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // The Icon smoothly sliding up when active
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutBack,
-              top: isActive ? 8.0 : 20.0,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: isActive ? 1.0 : 0.6,
+    final color = isActive ? colors.textPrimary : colors.textTertiary;
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: item.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        // No fixed height: the tab grows with the user's text-size setting.
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: AppDuration.normal,
+                curve: AppCurves.easeOut,
+                width: 56,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.12)
+                      : Colors.transparent,
+                  borderRadius: AppRadius.borderRadiusPill,
+                ),
                 child: Icon(
-                  isActive ? item.activeIcon : item.icon,
-                  size: 26,
-                  color: isActive ? colors.primary : colors.textTertiary,
+                  item.icon,
+                  size: 21,
+                  color: isActive ? colors.primary : color,
                 ),
               ),
-            ),
-            
-            // The label appearing below
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              bottom: isActive ? 16.0 : 4.0,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: isActive ? 1.0 : 0.0,
-                child: Text(
-                  item.label,
-                  style: AppTypography.eyebrow.copyWith(
-                    color: colors.primary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.caption.copyWith(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
-            ),
-            
-            // A tiny glowing dot below the label
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              bottom: isActive ? 6.0 : -4.0,
-              child: AnimatedScale(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutBack,
-                scale: isActive ? 1.0 : 0.0,
-                child: Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors.primary,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.primaryGlow,
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                      )
-                    ]
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -240,13 +201,8 @@ class _AnimNavTabButton extends StatelessWidget {
 }
 
 class _NavItem {
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-  });
+  const _NavItem({required this.icon, required this.label});
 
   final IconData icon;
-  final IconData activeIcon;
   final String label;
 }

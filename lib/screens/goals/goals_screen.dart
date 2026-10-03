@@ -299,7 +299,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -331,7 +331,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         TextField(
           controller: controller,
@@ -366,7 +366,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         InkWell(
           onTap: _pickDate,
@@ -400,7 +400,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         InkWell(
           onTap: _pickTime,
@@ -569,7 +569,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
                                 targetType: targetTypeMapped,
                                 deadline: _targetDate,
                                 icon: LucideIcons.target,
-                                progressColor: const Color(0xFF63C2A5), // Mint
+                                progressColor: const Color(0xFF6A9A73), // Sage
                                 target: double.tryParse(_targetValueController.text) ?? 1.0,
                                 unit: _unitController.text,
                               );

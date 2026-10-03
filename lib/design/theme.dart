@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ASCENT FLOW — THEME EXTENSION
-// Dual-theme system: Dark ("Midnight Studio") + Light ("Morning Clarity")
+// Dual-theme system: Light ("Paper") + Dark ("Evening")
 // Resolve via: Theme.of(context).extension<AppColorsExtension>()!
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -86,9 +88,9 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     shadow: AppColors.lightShadow,
     cardShadow: [
       BoxShadow(
-        color: Color(0x146B4ED9), // rgba(107,78,217,0.08)
-        blurRadius: 16,
-        offset: Offset(0, 2),
+        color: AppColors.lightShadow,
+        blurRadius: 3,
+        offset: Offset(0, 1),
       ),
     ],
     isDark: false,
@@ -167,31 +169,94 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
 // THEME DATA BUILDERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-ThemeData buildDarkTheme() {
-  return ThemeData(
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.darkBg,
-    colorScheme: ColorScheme.dark(
-      primary: AppColors.primaryDark,
-      secondary: AppColors.mint,
-      surface: AppColors.darkSurface1,
-      error: AppColors.danger,
-    ),
-    extensions: const [AppColorsExtension.dark],
-  );
-}
+ThemeData buildDarkTheme() => _buildTheme(AppColorsExtension.dark);
 
-ThemeData buildLightTheme() {
-  return ThemeData(
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: AppColors.lightBg,
-    colorScheme: ColorScheme.light(
-      primary: AppColors.primaryLight,
-      secondary: AppColors.mintLight,
-      surface: AppColors.lightSurface1,
-      error: AppColors.dangerLight,
+ThemeData buildLightTheme() => _buildTheme(AppColorsExtension.light);
+
+ThemeData _buildTheme(AppColorsExtension c) {
+  final brightness = c.isDark ? Brightness.dark : Brightness.light;
+  final onPrimary = c.isDark ? AppColors.darkBg : Colors.white;
+  final base = ThemeData(brightness: brightness, useMaterial3: true);
+  final textTheme = GoogleFonts.figtreeTextTheme(base.textTheme).apply(
+    bodyColor: c.textPrimary,
+    displayColor: c.textPrimary,
+  );
+
+  return base.copyWith(
+    scaffoldBackgroundColor: c.background,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: c.primary,
+      brightness: brightness,
+    ).copyWith(
+      primary: c.primary,
+      onPrimary: onPrimary,
+      secondary: c.mint,
+      surface: c.surface1,
+      onSurface: c.textPrimary,
+      error: c.danger,
+      outline: c.border,
     ),
-    extensions: const [AppColorsExtension.light],
+    textTheme: textTheme,
+    splashFactory: InkSparkle.splashFactory,
+    dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 1),
+    appBarTheme: AppBarTheme(
+      backgroundColor: c.background,
+      foregroundColor: c.textPrimary,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+    ),
+    cardTheme: CardThemeData(
+      color: c.surface1,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.borderRadiusMd,
+        side: BorderSide(color: c.border),
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: c.surface1,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      dragHandleColor: c.surface3,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: c.surface1,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.borderRadiusLg),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: c.textPrimary,
+      contentTextStyle: textTheme.bodyMedium?.copyWith(color: c.background),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.borderRadiusSm),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      hintStyle: TextStyle(color: c.textTertiary),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? onPrimary : c.textTertiary,
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? c.primary : c.surface2,
+      ),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? c.primary : c.border,
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: c.primary,
+      linearTrackColor: c.surface2,
+      circularTrackColor: c.surface2,
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: c.primary,
+      selectionColor: c.primary.withValues(alpha: 0.25),
+      selectionHandleColor: c.primary,
+    ),
+    extensions: [c],
   );
 }
 

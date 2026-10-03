@@ -118,16 +118,18 @@ class _MoreScreenState extends State<MoreScreen>
             const SizedBox(height: AppSpacing.xl),
 
             // ── Tools Grid ──────────────────────────────────────
-            const EyebrowLabel('TOOLS'),
+            const EyebrowLabel('Tools'),
             const SizedBox(height: AppSpacing.sm),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              // Tile height follows the text-size setting: fixed padding and
+              // icon, plus the title and subtitle lines scaled by the user.
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSpacing.sm,
                 crossAxisSpacing: AppSpacing.sm,
-                childAspectRatio: 1.25,
+                mainAxisExtent: 100 + MediaQuery.textScalerOf(context).scale(44),
               ),
               itemCount: _menuItems.length,
               itemBuilder: (context, index) {
@@ -234,23 +236,10 @@ class _AnimatedMenuCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: colors.surface2,
+            color: colors.surface1,
             borderRadius: AppRadius.borderRadiusMd,
-            border: Border.all(
-              color: colors.isDark
-                  ? item.color.withValues(alpha: 0.25)
-                  : item.color.withValues(alpha: 0.15),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colors.isDark
-                    ? item.color.withValues(alpha: 0.08)
-                    : item.color.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: colors.border, width: 1),
+            boxShadow: colors.cardShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,14 +249,16 @@ class _AnimatedMenuCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: 0.12),
+                  color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
                   borderRadius: AppRadius.borderRadiusSm,
                 ),
-                child: Icon(item.icon, size: 22, color: item.color),
+                child: Icon(item.icon, size: 20, color: colors.primary),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.bodyLarge.copyWith(
                   color: colors.textPrimary,
                 ),
@@ -275,6 +266,8 @@ class _AnimatedMenuCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 item.subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.caption.copyWith(
                   color: colors.textSecondary,
                 ),

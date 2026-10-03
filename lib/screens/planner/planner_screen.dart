@@ -799,11 +799,8 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: AppTypography.caption.copyWith(
-            color: colors.textTertiary,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.8));
+    return Text(sentenceCase(text),
+        style: AppTypography.eyebrow.copyWith(color: colors.textSecondary));
   }
 }
 

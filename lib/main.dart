@@ -16,13 +16,13 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
 );
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.dark) {
+  ThemeModeNotifier() : super(ThemeMode.system) {
     _load();
   }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final themeName = prefs.getString('themeMode') ?? 'dark';
+    final themeName = prefs.getString('themeMode') ?? 'system';
     state = _parseTheme(themeName);
   }
 
@@ -59,12 +59,6 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseService.init();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
   runApp(const ProviderScope(child: AscentFlowApp()));
 }
 
@@ -81,6 +75,17 @@ class AscentFlowApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
+      // Status bar icons follow the active theme so they stay readable.
+      builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: (isDark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark)
+              .copyWith(statusBarColor: Colors.transparent),
+          child: child!,
+        );
+      },
       home: const MainScaffold(),
     );
   }

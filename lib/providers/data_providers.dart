@@ -291,7 +291,7 @@ final _initialGoals = [
     id: 'g1',
     title: 'Morning Meditation',
     icon: LucideIcons.moon,
-    progressColor: const Color(0xFF9E77F1), // Primary
+    progressColor: const Color(0xFF8C6A9E), // Plum
     category: 'Health',
     targetType: GoalTargetType.dailyHabit,
     progress: 1.0, 
@@ -301,7 +301,7 @@ final _initialGoals = [
     id: 'g2',
     title: 'Read 20 pages',
     icon: LucideIcons.book,
-    progressColor: const Color(0xFFFFB053), // Sunset
+    progressColor: const Color(0xFFC98A3D), // Ochre
     category: 'Learning',
     targetType: GoalTargetType.dailyHabit,
     progress: 0.0, 
@@ -311,7 +311,7 @@ final _initialGoals = [
     id: 'g3',
     title: 'Run 5km',
     icon: LucideIcons.activity,
-    progressColor: const Color(0xFF63C2A5), // Mint
+    progressColor: const Color(0xFF6A9A73), // Sage
     category: 'Health',
     targetType: GoalTargetType.numeric,
     progress: 2.5,

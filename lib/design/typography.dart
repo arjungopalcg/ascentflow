@@ -3,76 +3,85 @@ import 'package:google_fonts/google_fonts.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ASCENT FLOW — TYPOGRAPHY
-// Two typefaces: Sora (display/headings) + Inter (body/UI)
+// Two typefaces: Fraunces (headings — a soft, warm serif, like a good
+// notebook) + Figtree (body/UI — friendly and very legible at small sizes).
+// Weights stay moderate; nothing shouts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppTypography {
   AppTypography._();
 
-  // ── Sora — Display & Headings ────────────────────────────────────────
+  // ── Fraunces — Display & Headings ────────────────────────────────────
 
-  static TextStyle get displayXl => GoogleFonts.sora(
-        fontSize: 48,
-        fontWeight: FontWeight.w800,
+  static TextStyle get displayXl => GoogleFonts.fraunces(
+        fontSize: 44,
+        fontWeight: FontWeight.w500,
         height: 1.1,
+        letterSpacing: -0.5,
       );
 
-  static TextStyle get display => GoogleFonts.sora(
-        fontSize: 32,
-        fontWeight: FontWeight.w800,
+  static TextStyle get display => GoogleFonts.fraunces(
+        fontSize: 30,
+        fontWeight: FontWeight.w500,
         height: 1.2,
+        letterSpacing: -0.3,
       );
 
-  static TextStyle get heading1 => GoogleFonts.sora(
+  static TextStyle get heading1 => GoogleFonts.fraunces(
         fontSize: 24,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         height: 1.25,
       );
 
-  static TextStyle get heading2 => GoogleFonts.sora(
+  static TextStyle get heading2 => GoogleFonts.fraunces(
         fontSize: 20,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         height: 1.3,
       );
 
-  static TextStyle get heading3 => GoogleFonts.sora(
+  static TextStyle get heading3 => GoogleFonts.figtree(
         fontSize: 17,
         fontWeight: FontWeight.w600,
         height: 1.35,
       );
 
-  // ── Inter — Body & UI ───────────────────────────────────────────────
+  // ── Figtree — Body & UI ──────────────────────────────────────────────
 
-  static TextStyle get bodyLarge => GoogleFonts.inter(
+  static TextStyle get bodyLarge => GoogleFonts.figtree(
         fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.4,
+        fontWeight: FontWeight.w500,
+        height: 1.45,
       );
 
-  static TextStyle get body => GoogleFonts.inter(
-        fontSize: 14,
+  static TextStyle get body => GoogleFonts.figtree(
+        fontSize: 15,
         fontWeight: FontWeight.w400,
         height: 1.5,
       );
 
-  static TextStyle get label => GoogleFonts.inter(
-        fontSize: 13,
+  static TextStyle get label => GoogleFonts.figtree(
+        fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.4,
       );
 
-  static TextStyle get caption => GoogleFonts.inter(
-        fontSize: 12,
+  static TextStyle get caption => GoogleFonts.figtree(
+        fontSize: 12.5,
         fontWeight: FontWeight.w400,
         height: 1.4,
       );
 
-  /// Tracked-caps eyebrow label — the editorial signature element.
-  /// Usage: section headers like "TASKS · TODAY", "YOUR STREAKS", etc.
-  static TextStyle get eyebrow => GoogleFonts.inter(
-        fontSize: 10,
+  /// Quiet section header in sentence case ("Today's plan").
+  static TextStyle get eyebrow => GoogleFonts.figtree(
+        fontSize: 13,
         fontWeight: FontWeight.w600,
         height: 1.4,
-        letterSpacing: 1.8,
       );
+}
+
+/// "TODAY'S PROGRESS" → "Today's progress". Leaves mixed-case text alone.
+String sentenceCase(String text) {
+  if (text.isEmpty || text != text.toUpperCase()) return text;
+  final lower = text.toLowerCase();
+  return lower[0].toUpperCase() + lower.substring(1);
 }

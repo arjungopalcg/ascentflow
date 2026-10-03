@@ -60,21 +60,21 @@ class _SavingsScreenState extends State<SavingsScreen> {
       title: 'Emergency Fund',
       current: 2500,
       target: 5000,
-      color: const Color(0xFF9E77F1),
+      color: const Color(0xFF8C6A9E),
     ),
     SavingsGoal(
       id: 's2',
       title: 'Vacation',
       current: 800,
       target: 2000,
-      color: const Color(0xFF10F1D3),
+      color: const Color(0xFF4E8F8B),
     ),
     SavingsGoal(
       id: 's3',
       title: 'New Laptop',
       current: 1500,
       target: 2400,
-      color: const Color(0xFFFFB053),
+      color: const Color(0xFFC98A3D),
     ),
   ];
 
@@ -345,12 +345,12 @@ class _CreateGoalSheetState extends State<_CreateGoalSheet> {
   String _selectedSymbol = '\$';
 
   final _colors = [
-    const Color(0xFF9E77F1),
-    const Color(0xFF10F1D3),
-    const Color(0xFFFFB053),
-    const Color(0xFFFF6B6B),
-    const Color(0xFF63C2A5),
-    const Color(0xFF4D9FF4),
+    const Color(0xFF8C6A9E),
+    const Color(0xFF4E8F8B),
+    const Color(0xFFC98A3D),
+    const Color(0xFFC4675A),
+    const Color(0xFF6A9A73),
+    const Color(0xFF5B7FA8),
   ];
   int _colorIndex = 0;
 
@@ -760,11 +760,8 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: AppTypography.caption.copyWith(
-            color: colors.textTertiary,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.8));
+    return Text(sentenceCase(text),
+        style: AppTypography.eyebrow.copyWith(color: colors.textSecondary));
   }
 }
 

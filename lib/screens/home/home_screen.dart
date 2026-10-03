@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../design/theme.dart';
@@ -96,9 +97,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Stack(
       children: [
-        // ── Ambient Background ─────────────────────────────────────
-        if (colors.isDark) _AmbientBg(controller: _staggerController),
-
         // ── Main Content ───────────────────────────────────────────
         SafeArea(
           child: SingleChildScrollView(
@@ -212,39 +210,6 @@ class _StaggeredWidget extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AMBIENT BACKGROUND — Subtle pulsing radial gradient (dark only)
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _AmbientBg extends StatelessWidget {
-  const _AmbientBg({required this.controller});
-  final AnimationController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, child) {
-          final pulse = 0.06 + 0.05 * (0.5 + 0.5 * controller.value);
-          return Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topCenter,
-                radius: 1.2,
-                colors: [
-                  AppColors.primaryDark.withValues(alpha: pulse),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // HEADER ROW
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -257,13 +222,11 @@ class _HeaderRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [colors.primary, colors.primaryLighter],
-          ).createShader(bounds),
+        Expanded(
           child: Text(
-            'Ascent Flow',
-            style: AppTypography.heading3.copyWith(color: Colors.white),
+            DateFormat('EEEE, d MMMM').format(DateTime.now()),
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.label.copyWith(color: colors.textSecondary),
           ),
         ),
         // Profile avatar
@@ -280,11 +243,8 @@ class _HeaderRow extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colors.surface2,
-              border: Border.all(
-                color: colors.primary.withValues(alpha: colors.isDark ? 0.5 : 0.3),
-                width: 1.5,
-              ),
+              color: colors.surface1,
+              border: Border.all(color: colors.border),
             ),
             child: Icon(
               LucideIcons.user,
@@ -315,33 +275,9 @@ class _GreetingBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$_greeting,',
-          style: AppTypography.heading1.copyWith(
-            color: colors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Row(
-          children: [
-            Text(
-              'Alex',
-              style: AppTypography.display.copyWith(
-                color: colors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            AppChip(
-              label: 'LVL 7 · FOCUSED',
-              variant: ChipVariant.violet,
-              icon: LucideIcons.hexagon,
-            ),
-          ],
-        ),
-      ],
+    return Text(
+      '$_greeting, Alex',
+      style: AppTypography.display.copyWith(color: colors.textPrimary),
     );
   }
 }
@@ -363,25 +299,17 @@ class _DailyChallengeCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: colors.primary.withValues(alpha: 0.15),
+              color: colors.primary.withValues(alpha: colors.isDark ? 0.18 : 0.1),
               borderRadius: AppRadius.borderRadiusSm,
             ),
-            child: Icon(LucideIcons.zap, color: colors.primary, size: 22),
+            child: Icon(LucideIcons.flag, color: colors.primary, size: 20),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      '✨ ',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    EyebrowLabel('DAILY CHALLENGE'),
-                  ],
-                ),
+                const EyebrowLabel('Daily challenge'),
                 const SizedBox(height: 4),
                 Text(
                   'Complete 3 high-priority tasks today',
@@ -403,60 +331,62 @@ class _DailyChallengeCard extends StatelessWidget {
 // TODAY'S PROGRESS
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _TodayProgressCard extends StatelessWidget {
+class _TodayProgressCard extends ConsumerWidget {
   const _TodayProgressCard({required this.colors});
   final AppColorsExtension colors;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tasks = ref.watch(tasksProvider);
+    final goals = ref.watch(goalsProvider);
+    final tasksDone = tasks.where((t) => t.isCompleted).length;
+    final goalsDone = goals.where((g) => g.progress >= g.target).length;
+    final total = tasks.length + goals.length;
+    final done = tasksDone + goalsDone;
+
     return SolidCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const EyebrowLabel('TODAY\'S PROGRESS'),
-          const SizedBox(height: AppSpacing.md),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: _StatBox(
-                  value: 5,
-                  label: 'Tasks',
-                  suffix: '/8',
-                  colors: colors,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _StatBox(
-                  value: 75,
-                  label: 'Focus min',
-                  suffix: '',
-                  colors: colors,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _StatBox(
-                  value: 3,
-                  label: 'Goals',
-                  suffix: '',
-                  colors: colors,
-                ),
+              const Expanded(child: EyebrowLabel('Today so far')),
+              Text(
+                total == 0 ? 'Nothing planned yet' : '$done of $total done',
+                style: AppTypography.caption.copyWith(color: colors.textTertiary),
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: AppRadius.borderRadiusPill,
+            child: LinearProgressIndicator(
+              value: total == 0 ? 0 : done / total,
+              minHeight: 6,
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
-          // Streak indicators centered
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          IntrinsicHeight(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _StreakPill(emoji: '🔥', count: 12, label: 'Journal', variant: ChipVariant.mint),
-                const SizedBox(width: AppSpacing.xs),
-                _StreakPill(emoji: '🔥', count: 7, label: 'Focus', variant: ChipVariant.violet),
-                const SizedBox(width: AppSpacing.xs),
-                _StreakPill(emoji: '🔥', count: 5, label: 'Tasks', variant: ChipVariant.amber),
+                Expanded(
+                  child: _StatBox(
+                    value: tasksDone.toDouble(),
+                    label: 'Tasks done',
+                    suffix: ' / ${tasks.length}',
+                    colors: colors,
+                  ),
+                ),
+                VerticalDivider(color: colors.border, width: AppSpacing.xl),
+                Expanded(
+                  child: _StatBox(
+                    value: goalsDone.toDouble(),
+                    label: 'Goals met',
+                    suffix: ' / ${goals.length}',
+                    colors: colors,
+                  ),
+                ),
               ],
             ),
           ),
@@ -481,54 +411,32 @@ class _StatBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: colors.surface2.withValues(alpha: 0.5),
-        borderRadius: AppRadius.borderRadiusMd,
-        border: Border.all(color: colors.border.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              CountUpText(
-                value: value,
-                style: AppTypography.heading2.copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 22,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            CountUpText(
+              value: value,
+              style: AppTypography.display.copyWith(
+                color: colors.textPrimary,
+                fontSize: 28,
               ),
-              if (suffix.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(
-                    suffix,
-                    style: AppTypography.caption.copyWith(
-                      color: colors.textTertiary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: colors.textSecondary,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+            if (suffix.isNotEmpty)
+              Text(
+                suffix,
+                style: AppTypography.label.copyWith(color: colors.textTertiary),
+              ),
+          ],
+        ),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: colors.textSecondary),
+        ),
+      ],
     );
   }
 }
@@ -649,27 +557,6 @@ class _TaskReminderWidget extends ConsumerWidget {
   }
 }
 
-class _StreakPill extends StatelessWidget {
-  const _StreakPill({
-    required this.emoji,
-    required this.count,
-    required this.label,
-    required this.variant,
-  });
-
-  final String emoji;
-  final int count;
-  final String label;
-  final ChipVariant variant;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppChip(
-      label: '$emoji $count $label',
-      variant: variant,
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TODAY'S PLAN
@@ -714,7 +601,7 @@ class _TodayPlanCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const EyebrowLabel('TODAY\'S PLAN'),
+              const Expanded(child: EyebrowLabel('Today\'s plan')),
               Text(
                 '${combinedItems.length} items',
                 style: AppTypography.caption.copyWith(
@@ -809,16 +696,11 @@ class _MotivationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text('✨ ', style: TextStyle(fontSize: 14)),
-              EyebrowLabel('DAILY MOTIVATION'),
-            ],
-          ),
+          const EyebrowLabel('A thought for today'),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '"The secret of getting ahead is getting started."',
-            style: AppTypography.bodyLarge.copyWith(
+            '“The secret of getting ahead is getting started.”',
+            style: AppTypography.heading2.copyWith(
               color: colors.textPrimary,
               fontStyle: FontStyle.italic,
             ),

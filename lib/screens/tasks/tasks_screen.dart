@@ -98,17 +98,20 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Tasks',
-                          style: AppTypography.display.copyWith(
-                            color: colors.textPrimary,
+                        Flexible(
+                          child: Text(
+                            'Tasks',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.display.copyWith(
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AppChip(
-                              label: '${upcomingTasks.length} REM',
+                              label: '${upcomingTasks.length} left',
                               variant: ChipVariant.violet,
                             ),
                             const SizedBox(width: AppSpacing.sm),
@@ -129,9 +132,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                    child: EyebrowLabel('UPCOMING'),
+                    child: EyebrowLabel('Upcoming'),
                   ),
                 ),
+                const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xs)),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   sliver: SliverList(
@@ -287,21 +291,22 @@ class _TaskCard extends StatelessWidget {
     final isCompleted = task.isCompleted;
     
     // Map priorities to chip styles
-    String priorityLabel = 'MED';
+    String priorityLabel = 'Medium';
     ChipVariant chipVariant = ChipVariant.amber;
     Color? accentColor = colors.amber;
     
     if (task.priority == TaskPriority.high) {
-      priorityLabel = 'HIGH';
+      priorityLabel = 'High';
       chipVariant = ChipVariant.danger;
       accentColor = colors.danger;
     } else if (task.priority == TaskPriority.low) {
-      priorityLabel = 'LOW';
+      priorityLabel = 'Low';
       chipVariant = ChipVariant.gray;
       accentColor = colors.textTertiary;
     }
 
     return SolidCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       leftAccentColor: isCompleted ? null : accentColor,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -423,7 +428,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -455,7 +460,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         TextField(
           controller: controller,
@@ -489,7 +494,7 @@ class _CreateTaskSheetState extends ConsumerState<_CreateTaskSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(label.toUpperCase()),
+        EyebrowLabel(label),
         const SizedBox(height: AppSpacing.xs),
         InkWell(
           onTap: _pickDate,

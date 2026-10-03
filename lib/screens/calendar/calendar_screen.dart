@@ -28,11 +28,11 @@ class _CalendarEvent {
 }
 
 const _eventCategories = [
-  {'label': 'Task', 'color': Color(0xFF9E77F1)},
-  {'label': 'Habit', 'color': Color(0xFF10F1D3)},
-  {'label': 'Event', 'color': Color(0xFFFFB053)},
-  {'label': 'Savings', 'color': Color(0xFF4D9FF4)},
-  {'label': 'Goal', 'color': Color(0xFF63C2A5)},
+  {'label': 'Task', 'color': Color(0xFF8C6A9E)},
+  {'label': 'Habit', 'color': Color(0xFF4E8F8B)},
+  {'label': 'Event', 'color': Color(0xFFC98A3D)},
+  {'label': 'Savings', 'color': Color(0xFF5B7FA8)},
+  {'label': 'Goal', 'color': Color(0xFF6A9A73)},
 ];
 
 class CalendarScreen extends StatefulWidget {
@@ -51,7 +51,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e1',
       title: 'Ship Phase 9',
       category: 'Task',
-      color: const Color(0xFF9E77F1),
+      color: const Color(0xFF8C6A9E),
       time: '10:00 AM',
       date: DateTime.now(),
     ),
@@ -59,7 +59,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e2',
       title: 'Drink 2L Water',
       category: 'Habit',
-      color: const Color(0xFF10F1D3),
+      color: const Color(0xFF4E8F8B),
       time: 'Anytime',
       date: DateTime.now(),
     ),
@@ -67,7 +67,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e3',
       title: '\$50 to Emergency Fund',
       category: 'Savings',
-      color: const Color(0xFFFFB053),
+      color: const Color(0xFFC98A3D),
       time: 'Auto-Transfer',
       date: DateTime.now().add(const Duration(days: 1)),
     ),
@@ -75,7 +75,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       id: 'e4',
       title: 'Team Meeting',
       category: 'Event',
-      color: const Color(0xFF4D9FF4),
+      color: const Color(0xFF5B7FA8),
       time: '2:00 PM',
       date: DateTime.now().add(const Duration(days: 1)),
     ),
@@ -579,11 +579,8 @@ class _Label extends StatelessWidget {
   final String text;
   final AppColorsExtension colors;
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: AppTypography.caption.copyWith(
-          color: colors.textTertiary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.8));
+  Widget build(BuildContext context) => Text(sentenceCase(text),
+      style: AppTypography.eyebrow.copyWith(color: colors.textSecondary));
 }
 
 class _Input extends StatelessWidget {

@@ -275,18 +275,20 @@ class _JournalScreenState extends State<JournalScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '$_wordCount words',
-                          style: AppTypography.caption.copyWith(
-                            color: colors.textTertiary,
+                        Expanded(
+                          child: Text(
+                            '$_wordCount words',
+                            style: AppTypography.caption.copyWith(
+                              color: colors.textTertiary,
+                            ),
                           ),
                         ),
                         PillButton(
-                          label: 'Save Entry',
+                          label: 'Save entry',
                           onTap: () {
                             HapticFeedback.lightImpact();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Entry saved!', style: AppTypography.body.copyWith(color: Colors.white)), backgroundColor: colors.mint)
+                              const SnackBar(content: Text('Saved. Nice work showing up today.')),
                             );
                             _textController.clear();
                           },
@@ -309,14 +311,14 @@ class _JournalScreenState extends State<JournalScreen>
                      children: [
                        Icon(LucideIcons.sparkles, color: colors.primary),
                        const SizedBox(width: AppSpacing.sm),
-                       Text('Analyse with AI', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+                       Expanded(child: Text('Reflect on a stretch of days', style: AppTypography.heading3.copyWith(color: colors.textPrimary))),
                      ],
                    ),
                    const SizedBox(height: AppSpacing.sm),
-                   Text('Select a date range to generate a comprehensive AI summary of your mood and writing patterns.', style: AppTypography.body.copyWith(color: colors.textSecondary)),
+                   Text('Pick a few days or weeks and get a gentle summary of how your mood and writing have been.', style: AppTypography.body.copyWith(color: colors.textSecondary)),
                    const SizedBox(height: AppSpacing.md),
                    PillButton(
-                     label: _analysisRange == null ? 'Select Date Range' : 'Analyze ${_formatDateRange()}',
+                     label: _analysisRange == null ? 'Choose dates' : 'Summarise ${_formatDateRange()}',
                      onTap: _requestAnalysis,
                      variant: PillButtonVariant.secondary,
                    ),
@@ -415,7 +417,7 @@ class _MoodAnalysisCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          AppChip(label: '📈 UPWARD TREND', variant: ChipVariant.mint),
+          AppChip(label: 'Trending up', variant: ChipVariant.mint, icon: LucideIcons.trendingUp),
         ],
       ),
     );
@@ -460,7 +462,7 @@ class _CalendarCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const EyebrowLabel('MOOD CALENDAR'),
+              const Expanded(child: EyebrowLabel('Mood this month')),
               Text(
                 _monthName(now.month),
                 style: AppTypography.label.copyWith(

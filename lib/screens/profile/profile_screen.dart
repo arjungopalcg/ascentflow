@@ -65,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       AppChip(
-                        label: 'LVL 7 · FOCUSED',
+                        label: 'Level 7 · Focused',
                         variant: ChipVariant.violet,
                         icon: LucideIcons.hexagon,
                       ),
@@ -215,7 +215,7 @@ class _MenuSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: AppSpacing.md),
-        EyebrowLabel(title.toUpperCase()),
+        EyebrowLabel(title),
         const SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(

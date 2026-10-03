@@ -97,12 +97,14 @@ class _PillButtonState extends State<PillButton>
                   ),
                 )
               else
-                Text(
-                  widget.label,
-                  style: AppTypography.label.copyWith(
-                    color: _textColor(colors),
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
+                Flexible(
+                  child: Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.label.copyWith(
+                      color: _textColor(colors),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],
@@ -116,40 +118,19 @@ class _PillButtonState extends State<PillButton>
     switch (widget.variant) {
       case PillButtonVariant.primary:
         return BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colors.primary,
-              colors.primary.withValues(alpha: 0.85),
-            ],
-          ),
-          borderRadius: AppRadius.borderRadiusPill,
-          boxShadow: colors.isDark
-              ? [
-                  BoxShadow(
-                    color: colors.primaryGlow,
-                    blurRadius: 24,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
+          color: colors.primary,
+          borderRadius: AppRadius.borderRadiusMd,
         );
       case PillButtonVariant.secondary:
         return BoxDecoration(
-          color: colors.isDark
-              ? Colors.transparent
-              : colors.primary.withValues(alpha: 0.06),
-          borderRadius: AppRadius.borderRadiusPill,
-          border: Border.all(
-            color: colors.primary.withValues(alpha: 0.4),
-            width: 1.5,
-          ),
+          color: colors.surface1,
+          borderRadius: AppRadius.borderRadiusMd,
+          border: Border.all(color: colors.border, width: 1),
         );
       case PillButtonVariant.destructive:
         return BoxDecoration(
           color: colors.danger,
-          borderRadius: AppRadius.borderRadiusPill,
+          borderRadius: AppRadius.borderRadiusMd,
         );
     }
   }
@@ -158,9 +139,9 @@ class _PillButtonState extends State<PillButton>
     switch (widget.variant) {
       case PillButtonVariant.primary:
       case PillButtonVariant.destructive:
-        return Colors.white;
+        return colors.isDark ? AppColors.darkBg : Colors.white;
       case PillButtonVariant.secondary:
-        return colors.primary;
+        return colors.textPrimary;
     }
   }
 }
@@ -227,28 +208,19 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: colors.isDark
-                ? const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primaryDark, Color(0xFF5B3EC9)],
-                  )
-                : null,
-            color: colors.isDark ? null : colors.primary,
+            borderRadius: AppRadius.borderRadiusLg,
+            color: colors.primary,
             boxShadow: [
               BoxShadow(
-                color: colors.isDark
-                    ? colors.primaryGlow
-                    : colors.primary.withValues(alpha: 0.25),
-                blurRadius: colors.isDark ? 32 : 20,
-                offset: Offset(0, colors.isDark ? 8 : 6),
+                color: Colors.black.withValues(alpha: colors.isDark ? 0.3 : 0.12),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Icon(
             widget.icon,
-            color: Colors.white,
+            color: colors.isDark ? AppColors.darkBg : Colors.white,
             size: 24,
           ),
         ),

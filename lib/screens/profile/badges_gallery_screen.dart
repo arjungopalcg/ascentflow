@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
 import '../../design/typography.dart';
 import '../../design/tokens.dart';
@@ -43,9 +44,10 @@ class BadgesGalleryScreen extends StatelessWidget {
                   ),
                 ),
                 child: Center(
-                  child: Text(
-                    isUnlocked ? '🏆' : '🔒',
-                    style: const TextStyle(fontSize: 32),
+                  child: Icon(
+                    isUnlocked ? LucideIcons.award : LucideIcons.lock,
+                    size: 28,
+                    color: isUnlocked ? colors.primary : colors.textTertiary,
                   ),
                 ),
               ),

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../design/theme.dart';
 import '../../design/tokens.dart';
@@ -69,7 +68,7 @@ class SolidCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIER 2 — ELEVATED CARD
-// Elevated with glow/shadow. For More menu, featured content.
+// A touch more presence than a surface card. For menus, featured content.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class ElevatedCard extends StatelessWidget {
@@ -93,27 +92,10 @@ class ElevatedCard extends StatelessWidget {
       margin: margin,
       padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: colors.surface2,
+        color: colors.surface1,
         borderRadius: AppRadius.borderRadiusMd,
-        border: Border.all(
-          color: colors.isDark
-              ? colors.primary.withValues(alpha: 0.2)
-              : colors.primary.withValues(alpha: 0.15),
-          width: 1,
-        ),
-        boxShadow: [
-          if (colors.isDark)
-            BoxShadow(
-              color: colors.primary.withValues(alpha: 0.1),
-              blurRadius: 24,
-            )
-          else
-            BoxShadow(
-              color: colors.primary.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, 4),
-            ),
-        ],
+        border: Border.all(color: colors.border, width: 1),
+        boxShadow: colors.cardShadow,
       ),
       child: child,
     );
@@ -127,7 +109,7 @@ class ElevatedCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIER 3 — GLASS CARD
-// BackdropFilter blur. Use ONLY for: nav bar, modals, overlays.
+// Historically a blur panel; now a calm solid surface for overlays.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class GlassCard extends StatelessWidget {
@@ -150,32 +132,16 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final radius = borderRadius ?? AppRadius.borderRadiusMd;
-    final sigma = blurSigma ?? (colors.isDark ? 16.0 : 12.0);
 
     return Container(
       margin: margin,
-      child: ClipRRect(
+      padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: colors.surface1,
         borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: Container(
-            padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: colors.isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.white.withValues(alpha: 0.7),
-              borderRadius: radius,
-              border: Border.all(
-                color: colors.isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : colors.primary.withValues(alpha: 0.1),
-                width: 1,
-              ),
-            ),
-            child: child,
-          ),
-        ),
+        border: Border.all(color: colors.border, width: 1),
       ),
+      child: child,
     );
   }
 }
