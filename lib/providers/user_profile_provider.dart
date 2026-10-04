@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/analytics.dart';
 import 'home_widgets_provider.dart';
 import 'prefs_provider.dart';
 
@@ -82,6 +83,11 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     await _prefs.setStringList(_kAreas, [for (final a in areas) a.name]);
     await _prefs.setBool(_kOnboarded, true);
     state = _read(_prefs);
+    Analytics.capture('onboarding_completed', {
+      'focus_areas': [for (final a in areas) a.name],
+      'home_widgets': homeWidgets.length,
+      'day_start': dayStart?.name ?? 'skipped',
+    });
   }
 
   Future<void> setName(String name) async {

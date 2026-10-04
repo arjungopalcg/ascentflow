@@ -50,6 +50,14 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      # Google sign-in needs the signing key's fingerprints (public values).
+      - name: Signing fingerprints
+        id: fingerprints
+        run: |
+          out=$(keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android)
+          echo "sha1=$(echo "$out" | grep -m1 'SHA1:' | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(echo "$out" | grep -m1 'SHA256:' | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
       - name: Rename APK
         run: |
           mkdir -p dist
@@ -71,4 +79,8 @@ jobs:
             Installable test build from `${{ github.ref_name }}` (${{ github.sha }}).
             On your Android phone: download the APK below, open it, and allow
             "Install unknown apps" for your browser when asked.
+
+            Package: `com.ascentailabs.ascent_flow`
+            Signing SHA-1: `${{ steps.fingerprints.outputs.sha1 }}`
+            Signing SHA-256: `${{ steps.fingerprints.outputs.sha256 }}`
           files: dist/*.apk

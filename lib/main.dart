@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'design/theme.dart';
 import 'providers/prefs_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'services/analytics.dart';
 import 'services/focus_guard.dart';
 import 'services/supabase_service.dart';
 import 'screens/main_scaffold.dart';
@@ -65,9 +67,11 @@ Future<void> main() async {
   FocusGuard.init();
   final prefs = await SharedPreferences.getInstance();
   await SupabaseService.init();
+  await Analytics.init(prefs);
   runApp(ProviderScope(
     overrides: [sharedPrefsProvider.overrideWithValue(prefs)],
-    child: const AscentFlowApp(),
+    // PostHogWidget records (masked) session replays.
+    child: const PostHogWidget(child: AscentFlowApp()),
   ));
 }
 

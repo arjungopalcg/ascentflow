@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../game/climb_engine.dart';
+import '../../providers/prefs_provider.dart';
 import '../../providers/user_profile_provider.dart';
+import '../../services/analytics.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../design/theme.dart';
@@ -222,6 +224,11 @@ class ProfileScreen extends ConsumerWidget {
               title: 'Support',
               items: [
                 _MenuItemData(
+                  icon: LucideIcons.shieldCheck,
+                  label: 'Privacy',
+                  onTap: () => _showPrivacySheet(context, ref),
+                ),
+                _MenuItemData(
                   icon: LucideIcons.helpCircle,
                   label: 'Help & FAQs',
                   onTap: () => Navigator.push(
@@ -389,4 +396,45 @@ class _MenuSection extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Lets people turn usage analytics off.
+void _showPrivacySheet(BuildContext context, WidgetRef ref) {
+  final prefs = ref.read(sharedPrefsProvider);
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) {
+      final colors = ctx.colors;
+      return StatefulBuilder(
+        builder: (ctx, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Privacy', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
+                const SizedBox(height: AppSpacing.sm),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: Analytics.enabled,
+                  onChanged: (on) async {
+                    await Analytics.setEnabled(prefs, on);
+                    setSheetState(() {});
+                  },
+                  title: Text('Share usage data', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
+                  subtitle: Text(
+                    'Anonymous info about which features you use helps us make AscentFlow better. '
+                    'We never send your tasks, journal or names, and screen recordings hide all text.',
+                    style: AppTypography.caption.copyWith(color: colors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }

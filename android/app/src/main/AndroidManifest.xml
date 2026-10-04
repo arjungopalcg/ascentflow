@@ -48,6 +48,11 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Shows the countdown of a focus session the user started and keeps other apps locked until it ends"/>
         </service>
+        <!-- PostHog starts from Dart (Analytics.init), honouring the
+             in-app privacy switch, not automatically. -->
+        <meta-data
+            android:name="com.posthog.posthog.AUTO_INIT"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

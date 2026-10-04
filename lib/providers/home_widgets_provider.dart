@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/analytics.dart';
 import 'prefs_provider.dart';
 import 'user_profile_provider.dart';
 
@@ -200,8 +201,10 @@ class HomeWidgetsNotifier extends StateNotifier<HomeWidgetsState> {
     final List<String> newEnabledIds = List.from(state.enabledIds);
     if (newEnabledIds.contains(id)) {
       newEnabledIds.remove(id);
+      Analytics.capture('home_widget_removed', {'widget': id});
     } else {
       newEnabledIds.add(id);
+      Analytics.capture('home_widget_added', {'widget': id});
     }
     state = state.copyWith(enabledIds: newEnabledIds);
     _save();

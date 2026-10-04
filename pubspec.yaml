@@ -35,6 +35,7 @@ dependencies:
 
   # Backend
   supabase_flutter: ^2.18.0
+  posthog_flutter: ^5.50.13
 
 dev_dependencies:
   flutter_test:

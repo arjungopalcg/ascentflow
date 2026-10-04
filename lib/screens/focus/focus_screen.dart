@@ -10,6 +10,7 @@ import '../../design/tokens.dart';
 import '../../game/climb_engine.dart';
 import '../../providers/focus_settings_provider.dart';
 import '../../providers/prefs_provider.dart';
+import '../../services/analytics.dart';
 import '../../services/focus_guard.dart';
 import '../../widgets/common.dart';
 import '../../widgets/buttons.dart';
@@ -74,6 +75,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
           if (status == AnimationStatus.completed) {
             HapticFeedback.heavyImpact();
             if (_isFocusMode) {
+              Analytics.capture('focus_completed', {'minutes': _sessionMinutes, 'locked': _locked});
               ref.read(climbProvider.notifier).record(ClimbAction.focus);
               ref.read(focusStatsProvider.notifier).addSession(_sessionMinutes);
             }
@@ -95,7 +97,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
     _giveUpSub = FocusGuard.giveUps.listen((_) {
       if (!mounted) return;
       if (_sessionStarted) {
-        _giveUp(reason: 'You gave up. Pip slipped $focusFallMetres m.');
+        _giveUp(reason: 'You gave up. Pip slipped $focusFallMetres m.', how: 'lock_screen');
       } else {
         ref.read(climbProvider.notifier).slip();
       }
@@ -118,6 +120,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
     final prefs = ref.read(sharedPrefsProvider);
     if (prefs.getBool(FocusGuard.pendingSlipKey) != true) return;
     prefs.remove(FocusGuard.pendingSlipKey);
+    Analytics.capture('focus_given_up', {'how': 'closed_app'});
     ref.read(climbProvider.notifier).slip();
   }
 
@@ -131,7 +134,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
       _leftAt = null;
       _resyncFromClock();
       if (left != null && DateTime.now().difference(left) > _leaveGrace && _sessionStarted && !_isCompleted) {
-        _giveUp(reason: 'You left AscentFlow during focus, so Pip slipped $focusFallMetres m.');
+        _giveUp(reason: 'You left AscentFlow during focus, so Pip slipped $focusFallMetres m.', how: 'left_app');
       }
     } else if (state == AppLifecycleState.paused && !_locked) {
       // Turning the screen off isn't leaving; only count it if it's on.
@@ -220,6 +223,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
     final locked = settings.lockEnabled && FocusGuard.supported && await FocusGuard.canLock();
     if (!_sessionStarted) return; // ended while we were checking
     _locked = locked;
+    Analytics.capture('focus_started', {'minutes': _sessionMinutes, 'locked': locked});
     await FocusGuard.startSession(
       endAt: DateTime.now().add(_remaining),
       total: _total,
@@ -237,8 +241,14 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
   }
 
   /// Ends the focus session early: Pip slips down the mountain.
-  void _giveUp({String? reason}) {
+  void _giveUp({String? reason, String how = 'button'}) {
     if (!_sessionStarted) return; // it finished while we were asking
+    Analytics.capture('focus_given_up', {
+      'minutes': _sessionMinutes,
+      'minutes_left': _remaining.inMinutes,
+      'how': how,
+      'locked': _locked,
+    });
     ref.read(climbProvider.notifier).slip();
     _endSession();
     if (!mounted) return;

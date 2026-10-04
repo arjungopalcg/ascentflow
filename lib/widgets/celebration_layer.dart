@@ -10,6 +10,7 @@ import '../design/theme.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
 import '../game/climb_engine.dart';
+import '../services/analytics.dart';
 import '../screens/celebrations/summit_screen.dart';
 import 'campfire.dart';
 import 'confetti.dart';
@@ -50,6 +51,7 @@ class _CelebrationLayerState extends ConsumerState<CelebrationLayer> {
   }
 
   void _onEvent(ClimbEvent e) {
+    Analytics.climbEvent(e);
     if (!mounted) return;
     switch (e) {
       case GainEvent():

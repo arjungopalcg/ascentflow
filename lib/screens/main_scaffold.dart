@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../design/theme.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
+import '../services/analytics.dart';
 import '../widgets/celebration_layer.dart';
 import 'home/home_screen.dart';
 import 'tasks/tasks_screen.dart';
@@ -32,6 +33,8 @@ abstract final class AppTab {
 class MainScaffold extends ConsumerWidget {
   const MainScaffold({super.key});
 
+  static const _tabNames = ['Today', 'Tasks', 'Focus', 'Journal', 'More'];
+
   static const List<Widget> _screens = [
     HomeScreen(),
     TasksScreen(),
@@ -57,6 +60,7 @@ class MainScaffold extends ConsumerWidget {
           if (index == currentIndex) return;
           HapticFeedback.selectionClick();
           ref.read(navIndexProvider.notifier).state = index;
+          Analytics.screen(_tabNames[index]);
         },
       ),
     );

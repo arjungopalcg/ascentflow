@@ -69,9 +69,10 @@ sealed class ClimbEvent {
 }
 
 class GainEvent extends ClimbEvent {
-  const GainEvent(this.metres, this.label);
+  const GainEvent(this.metres, this.label, {this.action});
   final int metres;
   final String label;
+  final ClimbAction? action;
 }
 
 class StreakEvent extends ClimbEvent {
@@ -321,7 +322,7 @@ class ClimbNotifier extends StateNotifier<ClimbState> {
     state = s;
     _save();
 
-    _events.add(GainEvent(action.metres, action.label));
+    _events.add(GainEvent(action.metres, action.label, action: action));
     if (streakChanged) _events.add(StreakEvent(s.streak, usedRestDay: usedRest));
     if (s.camp > before.camp) _events.add(CampEvent(s.camp));
     if (s.expedition.index > before.expedition.index) {
