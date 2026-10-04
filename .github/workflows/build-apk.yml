@@ -39,27 +39,8 @@ jobs:
           flutter analyze
           flutter test
 
-      # Reuse the same debug signing key across builds so a new APK installs
-      # as an update over the last one. (The Play Store needs a real upload key.)
-      - name: Restore signing key
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: android-debug-keystore-v1
-
       - name: Build APK
         run: flutter build apk --release
-
-      # Google sign-in needs the signing key's fingerprints (public values).
-      - name: Signing fingerprints
-        id: fingerprints
-        run: |
-          ks="$HOME/.android/debug.keystore"
-          ls -la "$HOME/.android" || true
-          out=$(keytool -list -v -keystore "$ks" -storepass android 2>&1 || true)
-          echo "$out" | grep -E 'Alias|SHA1|SHA256|Keystore type|error' || true
-          echo "sha1=$(echo "$out" | grep -m1 'SHA1:' | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-          echo "sha256=$(echo "$out" | grep -m1 'SHA256:' | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
       - name: Rename APK
         run: |
@@ -84,6 +65,7 @@ jobs:
             "Install unknown apps" for your browser when asked.
 
             Package: `com.ascentailabs.ascent_flow`
-            Signing SHA-1: `${{ steps.fingerprints.outputs.sha1 }}`
-            Signing SHA-256: `${{ steps.fingerprints.outputs.sha256 }}`
+            Signed with the fixed test key (android/app/test-signing.jks):
+            SHA-1 `69:20:41:F6:FA:11:99:2D:F1:1F:AF:51:08:19:27:29:7C:D6:7C:51`
+            SHA-256 `CC:2D:4A:AC:16:75:B4:67:CE:36:7E:57:9F:90:43:EE:70:39:E0:3A:E9:DF:EB:80:D4:40:C8:53:6A:79:D4:6A`
           files: dist/*.apk

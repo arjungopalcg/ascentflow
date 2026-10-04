@@ -30,11 +30,24 @@ android {
         versionName = flutter.versionName
     }
 
+    // A fixed, public TEST key so every build installs over the last one and
+    // Google sign-in sees the same SHA-1. Not secret and not for the Play
+    // Store: publishing needs a private upload key kept out of the repo.
+    signingConfigs {
+        create("test") {
+            storeFile = file("test-signing.jks")
+            storePassword = "ascentflow-test"
+            keyAlias = "ascentflow-test"
+            keyPassword = "ascentflow-test"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("test")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("test")
         }
     }
 }
