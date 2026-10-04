@@ -9,6 +9,7 @@ import '../../design/typography.dart';
 import '../../design/tokens.dart';
 import '../../game/climb_engine.dart';
 import '../../providers/focus_settings_provider.dart';
+import '../../providers/prefs_provider.dart';
 import '../../services/focus_guard.dart';
 import '../../widgets/common.dart';
 import '../../widgets/buttons.dart';
@@ -41,10 +42,14 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
   bool _isCompleted = false;
 
   // ── Focus session state ────────────────────────────────────────────
-  /// A focus session is under way (running or paused): locked, and leaving
-  /// early makes Pip slip.
+  /// A focus session is under way. Like a Forest tree, it can't be paused,
+  /// and ending it early makes Pip slip.
   bool _sessionStarted = false;
-  bool _inSettings = false;
+
+  /// The lock covers other apps for this session (Android, with permission).
+  /// It also deals with leaving, so the 10-second rule is only for sessions
+  /// without it.
+  bool _locked = false;
 
   /// Wall-clock timing, so the session keeps counting while the screen is off.
   DateTime? _runStartedAt;
@@ -54,6 +59,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
   DateTime? _leftAt;
   static const _leaveGrace = Duration(seconds: 10);
   StreamSubscription<String>? _blockedSub;
+  StreamSubscription<void>? _giveUpSub;
 
   @override
   void initState() {
@@ -67,7 +73,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             HapticFeedback.heavyImpact();
-            if (_isFocusMode) ref.read(climbProvider.notifier).record(ClimbAction.focus);
+            if (_isFocusMode) {
+              ref.read(climbProvider.notifier).record(ClimbAction.focus);
+              ref.read(focusStatsProvider.notifier).addSession(_sessionMinutes);
+            }
             _endSession();
             setState(() {
               _isRunning = false;
@@ -79,42 +88,65 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
     _blockedSub = FocusGuard.blockedApps.listen((label) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$label is blocked until your session ends. Back to it!')),
+        SnackBar(content: Text('$label is locked until your session ends. Back to it!')),
       );
     });
+    // "Give up" tapped on the lock screen over another app.
+    _giveUpSub = FocusGuard.giveUps.listen((_) {
+      if (!mounted) return;
+      if (_sessionStarted) {
+        _giveUp(reason: 'You gave up. Pip slipped $focusFallMetres m.');
+      } else {
+        ref.read(climbProvider.notifier).slip();
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyPendingSlip());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _blockedSub?.cancel();
+    _giveUpSub?.cancel();
     if (_sessionStarted) _endSession();
     _timerController.dispose();
     super.dispose();
+  }
+
+  /// AscentFlow was closed from Recents during focus last time.
+  void _applyPendingSlip() {
+    final prefs = ref.read(sharedPrefsProvider);
+    if (prefs.getBool(FocusGuard.pendingSlipKey) != true) return;
+    prefs.remove(FocusGuard.pendingSlipKey);
+    ref.read(climbProvider.notifier).slip();
   }
 
   // ── Leaving the app during a session ───────────────────────────────
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_sessionStarted || !_isFocusMode) return;
-    if (state == AppLifecycleState.paused) {
-      // Turning the screen off isn't leaving; only count it if it's on.
-      FocusGuard.isScreenOn().then((on) {
-        if (on && _sessionStarted) _leftAt ??= DateTime.now();
-      });
-    } else if (state == AppLifecycleState.resumed) {
-      final left = _inSettings ? null : _leftAt;
+    if (state == AppLifecycleState.resumed) {
+      FocusGuard.clearWarning();
+      final left = _leftAt;
       _leftAt = null;
-      _inSettings = false;
       _resyncFromClock();
       if (left != null && DateTime.now().difference(left) > _leaveGrace && _sessionStarted && !_isCompleted) {
-        _giveUp(reason: 'You left the app during focus.');
+        _giveUp(reason: 'You left AscentFlow during focus, so Pip slipped $focusFallMetres m.');
       }
+    } else if (state == AppLifecycleState.paused && !_locked) {
+      // Turning the screen off isn't leaving; only count it if it's on.
+      FocusGuard.isScreenOn().then((on) {
+        if (on && _sessionStarted && _leftAt == null) {
+          _leftAt = DateTime.now();
+          FocusGuard.warnLeaving(_leaveGrace.inSeconds);
+        }
+      });
     }
   }
 
   // ── Timer ──────────────────────────────────────────────────────────
   Duration get _total => Duration(minutes: _sessionMinutes);
+  Duration get _remaining => _total * (1 - _timerController.value);
 
   void _startRunning() {
     _runStartedAt = DateTime.now();
@@ -145,42 +177,63 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
   }
 
   // ── Focus lock ─────────────────────────────────────────────────────
+  /// Before a session: if the lock is on but not set up, offer to set it up.
+  Future<bool> _readyToStart() async {
+    if (!FocusGuard.supported || !ref.read(focusSettingsProvider).lockEnabled) return true;
+    if (await FocusGuard.canLock()) {
+      if (!await FocusGuard.hasNotificationPermission()) {
+        await FocusGuard.requestNotificationPermission();
+      }
+      return true;
+    }
+    if (!mounted) return false;
+    final colors = context.colors;
+    final setUp = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Pip(size: 72, mood: PipMood.wave),
+        title: Text('Set up the focus lock', style: AppTypography.heading1.copyWith(color: colors.textPrimary)),
+        content: Text(
+          'Give AscentFlow two permissions so it can lock your other apps while you '
+          'focus and show the timer on your lock screen. You only do this once.',
+          style: AppTypography.body.copyWith(color: colors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Start without lock'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Set up'),
+          ),
+        ],
+      ),
+    );
+    if (setUp == true && mounted) showAppBlockerSettings(context);
+    return setUp == false;
+  }
+
   Future<void> _beginSession() async {
     _sessionStarted = true;
     final settings = ref.read(focusSettingsProvider);
-    if (!settings.lockEnabled || !FocusGuard.supported) return;
-    final messenger = ScaffoldMessenger.of(context);
-    await FocusGuard.startLock();
-    if (settings.blocked.isNotEmpty &&
-        await FocusGuard.hasUsageAccess() &&
-        await FocusGuard.hasOverlayPermission()) {
-      await FocusGuard.startBlocking(settings.blocked.toList());
-    }
-    // App pinning may be switched off on this phone.
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
-    if (mounted && _sessionStarted && !await FocusGuard.isLocked()) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Turn on app pinning so your phone can lock during focus.'),
-          action: SnackBarAction(
-            label: 'Settings',
-            onPressed: () {
-              // Going to Settings to fix the lock isn't giving up.
-              _inSettings = true;
-              FocusGuard.openPinningSettings();
-            },
-          ),
-        ),
-      );
-    }
+    final locked = settings.lockEnabled && FocusGuard.supported && await FocusGuard.canLock();
+    if (!_sessionStarted) return; // ended while we were checking
+    _locked = locked;
+    await FocusGuard.startSession(
+      endAt: DateTime.now().add(_remaining),
+      total: _total,
+      guard: locked,
+      allowed: settings.allowed,
+    );
   }
 
   void _endSession() {
     if (!_sessionStarted) return;
     _sessionStarted = false;
+    _locked = false;
     _leftAt = null;
-    FocusGuard.stopBlocking();
-    FocusGuard.stopLock();
+    FocusGuard.stopSession();
   }
 
   /// Ends the focus session early: Pip slips down the mountain.
@@ -229,20 +282,26 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
   bool _guardSession() {
     if (!_sessionStarted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Finish this session first, or reset to give up.')),
+      const SnackBar(content: Text('Finish this session first, or give up.')),
     );
     return true;
   }
 
-  void _toggleTimer() {
+  Future<void> _toggleTimer() async {
     HapticFeedback.mediumImpact();
-    if (_isRunning) {
-      // Pausing is allowed; the session (and the lock) stays on.
-      setState(_stopRunning);
+    if (!_isFocusMode) {
+      // Breaks can pause.
+      setState(_isRunning ? _stopRunning : _startRunning);
       return;
     }
-    if (_isFocusMode && !_sessionStarted) _beginSession();
+    if (_sessionStarted) {
+      // Focus can't pause, only give up.
+      if (await _confirmGiveUp()) _giveUp();
+      return;
+    }
+    if (!await _readyToStart() || !mounted) return;
     setState(_startRunning);
+    _beginSession();
   }
 
   Future<void> _resetTimer() async {
@@ -683,7 +742,16 @@ class _FocusScreenState extends ConsumerState<FocusScreen>
                     ),
                     const SizedBox(width: AppSpacing.xxl),
                     _PlayButton(
-                      isPlaying: _isRunning,
+                      icon: _isFocusMode && _sessionStarted
+                          ? LucideIcons.flag // give up
+                          : _isRunning
+                              ? LucideIcons.pause
+                              : LucideIcons.play,
+                      label: _isFocusMode && _sessionStarted
+                          ? 'Give up'
+                          : _isRunning
+                              ? 'Pause'
+                              : 'Start',
                       onTap: _toggleTimer,
                       colors: colors,
                     ),
@@ -809,12 +877,14 @@ class _TimerRingPainter extends CustomPainter {
 
 class _PlayButton extends StatelessWidget {
   const _PlayButton({
-    required this.isPlaying,
+    required this.icon,
+    required this.label,
     required this.onTap,
     required this.colors,
   });
 
-  final bool isPlaying;
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
   final AppColorsExtension colors;
 
@@ -832,8 +902,9 @@ class _PlayButton extends StatelessWidget {
         child: AnimatedSwitcher(
           duration: AppDuration.fast,
           child: Icon(
-            isPlaying ? LucideIcons.pause : LucideIcons.play,
-            key: ValueKey(isPlaying),
+            icon,
+            key: ValueKey(icon),
+            semanticLabel: label,
             color: colors.isDark ? AppColors.darkBg : Colors.white,
             size: 28,
           ),
@@ -968,31 +1039,44 @@ class _SoundscapeRow extends StatelessWidget {
 // BOTTOM STATS
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _BottomStats extends StatelessWidget {
+class _BottomStats extends ConsumerWidget {
   const _BottomStats({required this.colors});
   final AppColorsExtension colors;
 
+  static String _minutes(int m) {
+    if (m < 60) return '${m}m';
+    final h = m ~/ 60, rest = m % 60;
+    return rest == 0 ? '${h}h' : '${h}h ${rest}m';
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(focusStatsProvider);
+    ref.watch(climbProvider);
+    final streak = ref.read(climbProvider.notifier).displayStreak;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Expanded(
-            child: _StatItem(value: '4', label: 'Sessions', colors: colors),
+            child: _StatItem(value: '${stats.sessionsToday}', label: 'Sessions today', colors: colors),
           ),
           Container(width: 1, height: 28, color: colors.border),
           Expanded(
             child: _StatItem(
-              value: '1h 40m',
+              value: _minutes(stats.minutesToday),
               label: 'Focused today',
               colors: colors,
             ),
           ),
           Container(width: 1, height: 28, color: colors.border),
           Expanded(
-            child: _StatItem(value: '7 days', label: 'Streak', colors: colors),
+            child: _StatItem(
+              value: streak == 1 ? '1 day' : '$streak days',
+              label: 'Streak',
+              colors: colors,
+            ),
           ),
         ],
       ),

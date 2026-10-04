@@ -12,8 +12,9 @@ import '../../services/focus_guard.dart';
 import '../../widgets/pip.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FOCUS LOCK SETTINGS — turn the lock on, grant the two Android permissions it
-// needs, and choose which installed apps are blocked during focus.
+// FOCUS LOCK SETTINGS — turn the lock on, grant the Android permissions it
+// needs, and choose which apps stay usable during focus (everything else is
+// locked, like Forest's Deep Focus).
 // ─────────────────────────────────────────────────────────────────────────────
 
 void showAppBlockerSettings(BuildContext context) {
@@ -36,7 +37,8 @@ class _FocusLockSheet extends ConsumerStatefulWidget {
 class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBindingObserver {
   bool _usage = false;
   bool _overlay = false;
-  List<BlockableApp>? _apps;
+  bool _notify = false;
+  List<InstalledApp>? _apps;
   String _query = '';
 
   @override
@@ -66,10 +68,12 @@ class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBi
   Future<void> _refresh() async {
     final usage = await FocusGuard.hasUsageAccess();
     final overlay = await FocusGuard.hasOverlayPermission();
+    final notify = await FocusGuard.hasNotificationPermission();
     if (!mounted) return;
     setState(() {
       _usage = usage;
       _overlay = overlay;
+      _notify = notify;
     });
   }
 
@@ -78,12 +82,12 @@ class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBi
     final colors = context.colors;
     final settings = ref.watch(focusSettingsProvider);
     final notifier = ref.read(focusSettingsProvider.notifier);
-    final apps = (_apps ?? const <BlockableApp>[])
+    final apps = (_apps ?? const <InstalledApp>[])
         .where((a) => a.label.toLowerCase().contains(_query.toLowerCase()))
         .toList()
-      // Blocked apps first, then alphabetical.
+      // Allowed apps first, then alphabetical.
       ..sort((a, b) {
-        final ab = settings.blocked.contains(a.package), bb = settings.blocked.contains(b.package);
+        final ab = settings.allowed.contains(a.package), bb = settings.allowed.contains(b.package);
         if (ab != bb) return ab ? -1 : 1;
         return a.label.toLowerCase().compareTo(b.label.toLowerCase());
       });
@@ -125,8 +129,8 @@ class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBi
                     },
                     title: Text('Lock my phone during focus', style: AppTypography.heading3.copyWith(color: colors.textPrimary)),
                     subtitle: Text(
-                      'AscentFlow stays pinned on screen and your blocked apps send you back. '
-                      'Leaving early makes Pip slip $focusFallMetres m.',
+                      'Every app except the ones you allow below is locked until the timer ends. '
+                      'Calls always get through. Giving up makes Pip slip $focusFallMetres m.',
                       style: AppTypography.caption.copyWith(color: colors.textSecondary),
                     ),
                   ),
@@ -135,16 +139,17 @@ class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBi
                 if (!FocusGuard.supported)
                   _Card(
                     child: Text(
-                      'Phone lock and app blocking work on Android. On iPhone they need Apple\'s '
+                      'The phone lock works on Android. On iPhone it needs Apple\'s '
                       'Screen Time permission, which is coming in a later version. Leaving a '
                       'focus session early still makes Pip slip.',
                       style: AppTypography.body.copyWith(color: colors.textSecondary),
                     ),
                   )
                 else ...[
-                  Text('Allow app blocking', style: AppTypography.eyebrow.copyWith(color: colors.textPrimary)),
+                  Text('Set up the lock', style: AppTypography.eyebrow.copyWith(color: colors.textPrimary)),
                   Text(
-                    'Android needs two permissions to see which app you open and bring you back.',
+                    'Android needs these so AscentFlow can see which app you open, lock it, '
+                    'and show the timer on your lock screen.',
                     style: AppTypography.caption.copyWith(color: colors.textSecondary),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -157,20 +162,34 @@ class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBi
                   _PermissionRow(
                     granted: _overlay,
                     title: 'Display over other apps',
-                    body: 'Lets AscentFlow bring you back from a blocked app.',
+                    body: 'Lets AscentFlow cover locked apps and bring you back.',
                     onAllow: FocusGuard.openOverlaySettings,
+                  ),
+                  _PermissionRow(
+                    granted: _notify,
+                    title: 'Notifications',
+                    body: 'Shows the running timer on your lock screen.',
+                    onAllow: () async {
+                      await FocusGuard.requestNotificationPermission();
+                      await Future<void>.delayed(const Duration(seconds: 1));
+                      await _refresh();
+                    },
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Row(
                     children: [
                       Expanded(
-                        child: Text('Apps to block', style: AppTypography.eyebrow.copyWith(color: colors.textPrimary)),
+                        child: Text('Apps you can still use', style: AppTypography.eyebrow.copyWith(color: colors.textPrimary)),
                       ),
                       Text(
-                        '${settings.blocked.length} blocked',
+                        '${settings.allowed.length} allowed',
                         style: AppTypography.caption.copyWith(color: colors.textSecondary),
                       ),
                     ],
+                  ),
+                  Text(
+                    'Like Maps or Music. Everything else is locked during focus.',
+                    style: AppTypography.caption.copyWith(color: colors.textSecondary),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   TextField(
@@ -209,13 +228,13 @@ class _FocusLockSheetState extends ConsumerState<_FocusLockSheet> with WidgetsBi
                       itemCount: apps.length,
                       itemBuilder: (context, i) {
                         final app = apps[i];
-                        final on = settings.blocked.contains(app.package);
+                        final on = settings.allowed.contains(app.package);
                         return SwitchListTile.adaptive(
                           contentPadding: EdgeInsets.zero,
                           value: on,
                           onChanged: (_) {
                             HapticFeedback.selectionClick();
-                            notifier.toggleBlocked(app.package);
+                            notifier.toggleAllowed(app.package);
                           },
                           secondary: ClipRRect(
                             borderRadius: AppRadius.borderRadiusSm,

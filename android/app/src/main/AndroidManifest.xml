@@ -3,14 +3,17 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <!-- Focus lock: see which app is in front (granted by the user in
-         Settings > Usage access), return to AscentFlow from the background,
-         and keep the guard running as a foreground service during a session. -->
+         Settings > Usage access), cover other apps and return to AscentFlow
+         (display over other apps), and keep the countdown running as a
+         foreground service during a session. -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Android 16: keep the focus countdown pinned on the lock screen. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
     <application
         android:label="AscentFlow"
         android:name="${applicationName}"
@@ -43,7 +46,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Blocks apps the user chose while a focus session they started is running"/>
+                android:value="Shows the countdown of a focus session the user started and keeps other apps locked until it ends"/>
         </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
@@ -57,7 +60,7 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
-        <!-- Launchable apps, so people can pick which ones to block. -->
+        <!-- Launchable apps, so people can pick which ones stay usable during focus. -->
         <intent>
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>

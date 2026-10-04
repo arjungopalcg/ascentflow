@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification icon: a mountain with a flag on the summit. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11,2h1.2v5.5h-1.2zM12.2,2.4l4.3,1.6 -4.3,1.6zM11.6,7.5l10.4,14.5H1.2z" />
+</vector>

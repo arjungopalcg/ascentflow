@@ -3,6 +3,7 @@ import 'package:ascent_flow/main.dart';
 import 'package:ascent_flow/providers/prefs_provider.dart';
 import 'package:ascent_flow/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -34,6 +35,14 @@ Future<void> pumpApp(
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+  // The focus lock's Android side: nothing granted, every call succeeds.
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('ascentflow/focus'),
+    (call) async => call.method.startsWith('has') ? false : null,
+  );
+  addTearDown(() => tester.binding.defaultBinaryMessenger
+      .setMockMethodCallHandler(const MethodChannel('ascentflow/focus'), null));
 
   SharedPreferences.setMockInitialValues(prefs);
   final sp = await SharedPreferences.getInstance();
@@ -202,9 +211,15 @@ void main() {
     await tester.tap(find.text('Focus').last);
     await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.byIcon(LucideIcons.play));
+    await tester.pump(const Duration(milliseconds: 500));
+    // No lock permissions in tests, so it offers setup first.
+    expect(find.text('Set up the focus lock'), findsOneWidget);
+    await tester.tap(find.text('Start without lock'));
     await tester.pump(const Duration(seconds: 2));
 
-    await tester.tap(find.byIcon(LucideIcons.rotateCcw));
+    // Like Forest, focus can't be paused: the button is now "give up".
+    expect(find.byIcon(LucideIcons.pause), findsNothing);
+    await tester.tap(find.byIcon(LucideIcons.flag));
     await tester.pump(const Duration(seconds: 1)); // the timer keeps running
     expect(find.text('Give up this climb?'), findsOneWidget);
     await tester.tap(find.text('Give up'));
@@ -212,6 +227,16 @@ void main() {
 
     expect(container.read(climbProvider).altitude, before - focusFallMetres);
     expect(container.read(climbProvider).falls, 1);
+    await tester.pump(const Duration(seconds: 4)); // slip banner finishes
+  });
+
+  testWidgets('Closing the app mid-focus makes Pip slip on the next launch', (tester) async {
+    await pumpApp(tester, prefs: {..._onboarded, 'focus.pendingSlip': true});
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+
+    expect(container.read(climbProvider).falls, 1);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('focus.pendingSlip'), isNull, reason: 'applied once');
     await tester.pump(const Duration(seconds: 4)); // slip banner finishes
   });
 }

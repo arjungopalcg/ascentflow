@@ -1,9 +1,10 @@
 package com.ascentailabs.ascent_flow
 
-import android.app.ActivityManager
+import android.Manifest
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -18,30 +19,55 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
 /**
- * Focus lock bridge for Flutter (channel "ascentflow/focus"):
- * - app pinning (lock task mode) to keep the phone on AscentFlow during focus
- * - usage-access / overlay permission checks, used by app blocking
- * - the list of launchable apps for the blocker settings
- * - start/stop of [FocusGuardService], which sends you back here if you open
- *   a blocked app
+ * Focus session bridge for Flutter (channel "ascentflow/focus"):
+ * - start/stop of [FocusGuardService]: the lock-screen countdown and, when
+ *   allowed, the full-screen lock over other apps
+ * - usage-access / overlay / notification permission checks
+ * - the list of launchable apps, so people can pick which ones stay usable
+ * - "come back" alerts when someone leaves without the lock
  */
 class MainActivity : FlutterActivity() {
     private var channel: MethodChannel? = null
+    private var dartReady = false
+    private val pendingCalls = mutableListOf<Pair<String, Any?>>()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).also { ch ->
             ch.setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "startLock" -> {
-                        runCatching { startLockTask() }
+                    "ready" -> {
+                        dartReady = true
+                        pendingCalls.forEach { (method, args) -> ch.invokeMethod(method, args) }
+                        pendingCalls.clear()
                         result.success(null)
                     }
-                    "stopLock" -> {
-                        runCatching { if (isLocked()) stopLockTask() }
+                    "startSession" -> {
+                        FocusGuardService.start(
+                            this,
+                            endAt = call.argument<Number>("endAt")?.toLong() ?: 0L,
+                            totalMs = call.argument<Number>("totalMs")?.toLong() ?: 0L,
+                            guard = call.argument<Boolean>("guard") ?: false,
+                            allowed = ArrayList(call.argument<List<String>>("allowed") ?: emptyList()),
+                        )
                         result.success(null)
                     }
-                    "isLocked" -> result.success(isLocked())
+                    "stopSession" -> {
+                        FocusGuardService.stop(this)
+                        result.success(null)
+                    }
+                    "warnLeaving" -> {
+                        FocusGuardService.postAlert(
+                            this,
+                            "Come back to your climb!",
+                            "Return to AscentFlow within ${call.argument<Int>("seconds") ?: 10} seconds or Pip slips.",
+                        )
+                        result.success(null)
+                    }
+                    "clearWarning" -> {
+                        FocusGuardService.cancelAlert(this)
+                        result.success(null)
+                    }
                     "isScreenOn" -> {
                         val power = getSystemService(Context.POWER_SERVICE) as PowerManager
                         result.success(power.isInteractive)
@@ -60,51 +86,54 @@ class MainActivity : FlutterActivity() {
                         )
                         result.success(null)
                     }
-                    "openPinningSettings" -> {
-                        openSettings(Intent(Settings.ACTION_SECURITY_SETTINGS))
+                    "hasNotificationPermission" -> result.success(hasNotificationPermission())
+                    "requestNotificationPermission" -> {
+                        if (!hasNotificationPermission() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4203)
+                        }
                         result.success(null)
                     }
                     "launchableApps" -> Thread {
                         val apps = runCatching { launchableApps() }.getOrDefault(emptyList())
                         runOnUiThread { result.success(apps) }
                     }.start()
-                    "startBlocking" -> {
-                        val packages = call.argument<List<String>>("packages") ?: emptyList()
-                        FocusGuardService.start(this, ArrayList(packages))
-                        result.success(null)
-                    }
-                    "stopBlocking" -> {
-                        FocusGuardService.stop(this)
-                        result.success(null)
-                    }
                     else -> result.notImplemented()
                 }
             }
         }
-        reportBlockedApp(intent)
+        handleGuardIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        reportBlockedApp(intent)
+        handleGuardIntent(intent)
     }
 
-    /** Tells Flutter which blocked app the guard just sent the user back from. */
-    private fun reportBlockedApp(intent: Intent?) {
-        val pkg = intent?.getStringExtra(FocusGuardService.EXTRA_BLOCKED) ?: return
+    /** The guard sent the user back (from a locked app, or to give up). */
+    private fun handleGuardIntent(intent: Intent?) {
+        intent ?: return
+        if (intent.getBooleanExtra(FocusGuardService.EXTRA_GIVE_UP, false)) {
+            intent.removeExtra(FocusGuardService.EXTRA_GIVE_UP)
+            toDart("giveUp", null)
+        }
+        val pkg = intent.getStringExtra(FocusGuardService.EXTRA_BLOCKED) ?: return
         intent.removeExtra(FocusGuardService.EXTRA_BLOCKED)
         val label = runCatching {
             packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
         }.getOrDefault(pkg)
-        channel?.invokeMethod("blockedApp", mapOf("package" to pkg, "label" to label))
+        toDart("blockedApp", mapOf("package" to pkg, "label" to label))
     }
 
-    private fun isLocked(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+    /** Calls Dart now, or once it has said it's listening (cold start). */
+    private fun toDart(method: String, args: Any?) {
+        val ch = channel
+        if (dartReady && ch != null) ch.invokeMethod(method, args) else pendingCalls.add(method to args)
     }
+
+    private fun hasNotificationPermission(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     private fun hasUsageAccess(): Boolean {
         val ops = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
