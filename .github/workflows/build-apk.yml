@@ -54,7 +54,10 @@ jobs:
       - name: Signing fingerprints
         id: fingerprints
         run: |
-          out=$(keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android)
+          ks="$HOME/.android/debug.keystore"
+          ls -la "$HOME/.android" || true
+          out=$(keytool -list -v -keystore "$ks" -storepass android 2>&1 || true)
+          echo "$out" | grep -E 'Alias|SHA1|SHA256|Keystore type|error' || true
           echo "sha1=$(echo "$out" | grep -m1 'SHA1:' | awk '{print $2}')" >> "$GITHUB_OUTPUT"
           echo "sha256=$(echo "$out" | grep -m1 'SHA256:' | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
